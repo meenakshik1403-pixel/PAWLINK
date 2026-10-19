@@ -189,10 +189,7 @@ public class MainFrame extends JFrame {
                 "Displays daily appointment schedules and due reminder counts.",
                 "P7 (Pranathi)", "GET /api/appointments?vetId={id}&date=today, GET /api/reminders?due=true"));
 
-        registerTab("🐕 Patients / Pets", createModulePlaceholder(
-                "Patient Pet Lookup & Guidelines (P2)",
-                "Search patient pets by name or owner ID, and view polymorphic species care guidelines.",
-                "P2 (Archana)", "GET /api/pets?q={query}"));
+        registerTab("🐕 Patients / Pets", new PetsPanel());
 
         registerTab("📋 Medical & Vaccines", createModulePlaceholder(
                 "Clinical History & Vaccination Records (P3)",
@@ -224,10 +221,7 @@ public class MainFrame extends JFrame {
      * - Payments (P7)
      */
     private void setupOwnerTabs() {
-        registerTab("🐶 My Pets", createModulePlaceholder(
-                "Registered Pets & Care Guidelines (P2)",
-                "View registered pets, add new pets, and read polymorphic care guidelines.",
-                "P2 (Archana)", "GET /api/pets?ownerId={id}, POST /api/pets"));
+        registerTab("🐶 My Pets", new OwnerPetsPanel());
 
         registerTab("🏥 Book Appointment", createModulePlaceholder(
                 "Book Vet Clinic Appointment (P4)",

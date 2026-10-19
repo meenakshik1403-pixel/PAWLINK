@@ -54,6 +54,23 @@ public class ApiClient {
         return instance;
     }
 
+    public static String get(String endpoint) {
+        try {
+            HttpRequest request = getInstance().createRequestBuilder(endpoint).GET().build();
+            HttpResponse<String> response = getInstance().httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return response.body();
+            } else {
+                throw new ApiException(response.statusCode(), getInstance().extractErrorMessage(response.body(), response.statusCode()));
+            }
+        } catch (IOException e) {
+            throw new ApiException(503, "Network error: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiException(500, "Request interrupted: " + e.getMessage());
+        }
+    }
+
     public ObjectMapper getObjectMapper() {
         return objectMapper;
     }
