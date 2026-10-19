@@ -1,0 +1,8 @@
+# =====================================================================
+# Local Developer Configuration Example (Supabase Pooler / Local Postgres)
+# Copy this file to 'application-local.properties' (which is gitignored)
+# Run with: --spring.config.additional-location=optional:classpath:/application-local.properties
+# =====================================================================
+# spring.datasource.url=jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
+# spring.datasource.username=postgres.your-project-id
+# spring.datasource.password=your-db-password
