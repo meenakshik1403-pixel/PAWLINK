@@ -25,8 +25,19 @@ public class VetApp {
 
         // Launch on Event Dispatch Thread
         SwingUtilities.invokeLater(() -> {
-            LoginFrame loginFrame = new LoginFrame();
-            loginFrame.setVisible(true);
+            try {
+                System.out.println("[PawLink] Initializing LoginFrame on EventDispatchThread...");
+                LoginFrame loginFrame = new LoginFrame();
+                loginFrame.setVisible(true);
+                loginFrame.toFront();
+                loginFrame.requestFocus();
+                loginFrame.setAlwaysOnTop(true);
+                loginFrame.setAlwaysOnTop(false);
+                System.out.println("[PawLink] LoginFrame is now visible on screen.");
+            } catch (Throwable t) {
+                System.err.println("[PawLink ERROR] Failed to display LoginFrame:");
+                t.printStackTrace();
+            }
         });
     }
 }

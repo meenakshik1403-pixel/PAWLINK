@@ -63,6 +63,9 @@ public class MainFrame extends JFrame {
         // 4. Bottom System Status Bar
         JPanel statusBar = createBottomStatusBar();
         add(statusBar, BorderLayout.SOUTH);
+
+        toFront();
+        requestFocus();
     }
 
     private JPanel createTopHeaderBar() {
