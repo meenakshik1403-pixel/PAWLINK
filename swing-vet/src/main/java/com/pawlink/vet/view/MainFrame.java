@@ -193,10 +193,7 @@ public class MainFrame extends JFrame {
 
         registerTab("📋 Medical & Vaccines", new RecordsPanel());
 
-        registerTab("📅 Appointments", createModulePlaceholder(
-                "Vet Appointment Management (P4)",
-                "Review upcoming patient bookings, confirm pending visits, or complete appointments.",
-                "P4 (Hayah)", "GET /api/appointments?vetId={id}, PATCH /api/appointments/{id}/status"));
+        registerTab("📅 Appointments", new AppointmentsPanel());
 
         registerTab("🔔 Reminders", createModulePlaceholder(
                 "Automated Reminders & Due Checkups (P5)",
@@ -220,10 +217,7 @@ public class MainFrame extends JFrame {
     private void setupOwnerTabs() {
         registerTab("🐶 My Pets", new OwnerPetsPanel());
 
-        registerTab("🏥 Book Appointment", createModulePlaceholder(
-                "Book Vet Clinic Appointment (P4)",
-                "Select a registered veterinarian and time slot with conflict collision detection.",
-                "P4 (Hayah)", "GET /api/vets, POST /api/appointments"));
+        registerTab("🏥 Book Appointment", new AppointmentsPanel());
 
         registerTab("🏡 Find Pet Sitter", createModulePlaceholder(
                 "Sitter Booking & Escrow Payment (P6 & P7)",
