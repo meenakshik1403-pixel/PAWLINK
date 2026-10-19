@@ -191,10 +191,7 @@ public class MainFrame extends JFrame {
 
         registerTab("🐕 Patients / Pets", new PetsPanel());
 
-        registerTab("📋 Medical & Vaccines", createModulePlaceholder(
-                "Clinical History & Vaccination Records (P3)",
-                "Record clinical diagnoses, prescriptions, and schedule next vaccine due dates.",
-                "P3 (Devanarayanan)", "POST /api/pets/{id}/medical, POST /api/pets/{id}/vaccinations"));
+        registerTab("📋 Medical & Vaccines", new RecordsPanel());
 
         registerTab("📅 Appointments", createModulePlaceholder(
                 "Vet Appointment Management (P4)",

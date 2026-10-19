@@ -1,11 +1,17 @@
 package com.pawlink.pet;
 
+import com.pawlink.medical.MedicalRecord;
+import com.pawlink.medical.VaccinationRecord;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract domain model for Pets in PawLink.
  * Adheres to strict technical constraint: NO JPA/Hibernate annotations.
  * Uses plain SQL and RowMapper via Spring JdbcTemplate.
+ * Demonstrates Object Composition: Pet has multiple MedicalRecords and VaccinationRecords.
  */
 public abstract class Pet {
 
@@ -14,6 +20,10 @@ public abstract class Pet {
     private LocalDate dob;
     private Long ownerId;
     private String species;
+
+    // Composition: Pet has-a collection of MedicalRecords and VaccinationRecords
+    private List<MedicalRecord> medicalRecords = new ArrayList<>();
+    private List<VaccinationRecord> vaccinations = new ArrayList<>();
 
     public Pet() {
     }
@@ -79,6 +89,34 @@ public abstract class Pet {
 
     public void setSpecies(String species) {
         this.species = species;
+    }
+
+    public List<MedicalRecord> getMedicalRecords() {
+        return medicalRecords;
+    }
+
+    public void setMedicalRecords(List<MedicalRecord> medicalRecords) {
+        this.medicalRecords = medicalRecords != null ? medicalRecords : new ArrayList<>();
+    }
+
+    public void addMedicalRecord(MedicalRecord record) {
+        if (record != null) {
+            this.medicalRecords.add(record);
+        }
+    }
+
+    public List<VaccinationRecord> getVaccinations() {
+        return vaccinations;
+    }
+
+    public void setVaccinations(List<VaccinationRecord> vaccinations) {
+        this.vaccinations = vaccinations != null ? vaccinations : new ArrayList<>();
+    }
+
+    public void addVaccination(VaccinationRecord vac) {
+        if (vac != null) {
+            this.vaccinations.add(vac);
+        }
     }
 
     @Override

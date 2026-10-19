@@ -62,7 +62,7 @@
                     </div>
                 </div>
                 <div class="card-footer bg-white border-top-0 pb-3 pt-0 d-flex justify-content-between">
-                    <a th:href="@{'/medical?petId=' + ${pet.id}}" class="btn btn-sm btn-outline-secondary">
+                    <a th:href="@{'/pets/' + ${pet.id} + '/history'}" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-journal-medical me-1"></i> Medical History
                     </a>
                     <a th:href="@{'/appointments/new?petId=' + ${pet.id}}" class="btn btn-sm btn-outline-primary">

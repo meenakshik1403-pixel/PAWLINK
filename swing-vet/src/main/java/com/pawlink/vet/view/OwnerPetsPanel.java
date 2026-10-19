@@ -55,9 +55,18 @@ public class OwnerPetsPanel extends BasePanel {
         refreshButton.setFocusPainted(false);
         refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        JButton historyButton = new JButton("📋 Medical & Vaccines");
+        historyButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        historyButton.setBackground(new Color(13, 148, 136)); // Teal
+        historyButton.setForeground(Color.WHITE);
+        historyButton.setFocusPainted(false);
+        historyButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        historyButton.addActionListener(e -> openMedicalHistoryDialog());
+
         JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actionsPanel.setOpaque(false);
         actionsPanel.add(refreshButton);
+        actionsPanel.add(historyButton);
         actionsPanel.add(addPetButton);
         setHeaderAccessory(actionsPanel);
 
@@ -161,6 +170,21 @@ public class OwnerPetsPanel extends BasePanel {
         dialog.setVisible(true);
         if (dialog.isPetCreated()) {
             loadOwnerPets();
+        }
+    }
+
+    private void openMedicalHistoryDialog() {
+        int selectedRow = petTable.getSelectedRow();
+        if (selectedRow < 0) {
+            showError("Please select a pet from the table to view its medical and vaccination history.");
+            return;
+        }
+
+        PetDTO selectedPet = tableModel.getItem(selectedRow);
+        if (selectedPet != null) {
+            Frame topFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+            PetHistoryDialog dialog = new PetHistoryDialog(topFrame, selectedPet);
+            dialog.setVisible(true);
         }
     }
 
