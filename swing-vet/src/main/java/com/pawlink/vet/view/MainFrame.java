@@ -195,10 +195,7 @@ public class MainFrame extends JFrame {
 
         registerTab("📅 Appointments", new AppointmentsPanel());
 
-        registerTab("🔔 Reminders", createModulePlaceholder(
-                "Automated Reminders & Due Checkups (P5)",
-                "Inspect due vaccination alerts and trigger the observer-driven notification engine.",
-                "P5 (Meenakshi)", "GET /api/reminders?due=true, POST /api/reminders/run"));
+        registerTab("🔔 Reminders", new RemindersPanel());
 
         registerTab("📈 Analytics", createModulePlaceholder(
                 "Clinic Performance & Appointment Stats (P8)",
@@ -224,10 +221,7 @@ public class MainFrame extends JFrame {
                 "Browse verified sitters, select dates, and confirm bookings with escrow hold.",
                 "P6 (Parvathi) & P7 (Pranathi)", "GET /api/sitters, POST /api/sitter-bookings"));
 
-        registerTab("⏰ Alerts & Reminders", createModulePlaceholder(
-                "Pet Care Reminders (P5)",
-                "Upcoming vaccination reminders and checkup schedules.",
-                "P5 (Meenakshi)", "GET /api/reminders?ownerId={id}"));
+        registerTab("⏰ Alerts & Reminders", new RemindersPanel());
 
         registerTab("💳 Payment History", createModulePlaceholder(
                 "Transaction History (P7)",
