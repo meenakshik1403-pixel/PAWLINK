@@ -1,0 +1,57 @@
+{
+  "name": "PawLink (Java 21, Swing, Spring Boot, Supabase CLI)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/PAWLINK",
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "version": "latest",
+      "password": "pawlink",
+      "webPort": "6080",
+      "vncPort": "5901"
+    }
+  },
+  "forwardPorts": [
+    8080,
+    8081,
+    6080
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "PawLink Backend REST API (LAN)",
+      "onAutoForward": "notify"
+    },
+    "8081": {
+      "label": "PawLink Web Portal (LAN)",
+      "onAutoForward": "notify"
+    },
+    "6080": {
+      "label": "PawLink Swing Desktop noVNC (LAN)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "java.compile.nullAnalysis.mode": "automatic",
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "java.import.maven.enabled": true,
+        "maven.terminal.useJavaHome": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "vscjava.vscode-spring-initializr",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "humao.rest-client",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
+
