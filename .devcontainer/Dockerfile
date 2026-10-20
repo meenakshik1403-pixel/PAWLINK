@@ -3,8 +3,6 @@ FROM mcr.microsoft.com/devcontainers/java:1-21-bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Fix: Remove expired Yarn APT repository inherited from the base image
-# (Prevents "W: GPG error: ... NO_PUBKEY 62D54FD4003F6525" failure on apt-get update)
 # Then install Maven, essential CLI tools, and X11 libraries for Java Swing
 RUN rm -f /etc/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/*yarn* 2>/dev/null || true \
     && apt-get update && apt-get install -y --no-install-recommends \

@@ -130,3 +130,26 @@ CREATE TABLE IF NOT EXISTS payments (
     status VARCHAR(20) NOT NULL DEFAULT 'HELD' CHECK (status IN ('HELD', 'RELEASED', 'REFUNDED', 'FAILED')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ---------------------------------------------------------------------
+-- 8. VETS VERIFICATION TABLE
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS vets (
+    user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    verified BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- ---------------------------------------------------------------------
+-- 9. USER QUALIFICATION & VERIFICATION DOCUMENTS TABLE
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_documents (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    document_type VARCHAR(50) NOT NULL, -- 'ID_CARD', 'QUALIFICATION_PROOF'
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_documents_user ON user_documents(user_id);

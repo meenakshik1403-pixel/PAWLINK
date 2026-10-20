@@ -22,19 +22,24 @@ public class CreateReminderDialog extends JDialog {
 
     private final JComboBox<String> petComboBox;
     private final Map<Integer, Long> petIndexToId = new HashMap<>();
-    private final JTextField petIdField;
     private final JComboBox<String> typeComboBox;
     private final JTextField dueDateField;
 
     private final JButton submitButton;
     private final JButton cancelButton;
     private final Runnable onSuccess;
+    private final Long preselectedPetId;
 
     public CreateReminderDialog(Frame parent, Runnable onSuccess) {
+        this(parent, null, onSuccess);
+    }
+
+    public CreateReminderDialog(Frame parent, Long preselectedPetId, Runnable onSuccess) {
         super(parent, "➕ Schedule Pet Care Reminder", true);
         this.onSuccess = onSuccess;
+        this.preselectedPetId = preselectedPetId;
 
-        setSize(480, 400);
+        setSize(480, 380);
         setLocationRelativeTo(parent);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -48,7 +53,7 @@ public class CreateReminderDialog extends JDialog {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
 
-        JLabel subLabel = new JLabel("Configures observer alerts for medications, vaccines, or wellness checkups");
+        JLabel subLabel = new JLabel("Configure reminders for upcoming medications, vaccinations, or wellness checkups");
         subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         subLabel.setForeground(new Color(148, 163, 184));
 
@@ -71,18 +76,9 @@ public class CreateReminderDialog extends JDialog {
         form.add(petLabel, gbc);
 
         gbc.gridx = 1; gbc.weightx = 0.7;
-        JPanel petRow = new JPanel(new BorderLayout(8, 0));
-        petRow.setOpaque(false);
         petComboBox = new JComboBox<>();
         petComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-
-        petIdField = new JTextField("1", 4);
-        petIdField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        petIdField.setToolTipText("Manual Pet ID");
-
-        petRow.add(petComboBox, BorderLayout.CENTER);
-        petRow.add(petIdField, BorderLayout.EAST);
-        form.add(petRow, gbc);
+        form.add(petComboBox, gbc);
 
         // 2. Reminder Type
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
@@ -102,15 +98,14 @@ public class CreateReminderDialog extends JDialog {
         form.add(dateLabel, gbc);
 
         gbc.gridx = 1; gbc.weightx = 0.7;
-        dueDateField = new JTextField(LocalDate.now().plusDays(3).toString(), 12);
+        dueDateField = new JTextField(LocalDate.now().plusWeeks(2).toString());
         dueDateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        dueDateField.setToolTipText("Format: YYYY-MM-DD");
         form.add(dueDateField, gbc);
 
         add(form, BorderLayout.CENTER);
 
-        // Action Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
         buttonPanel.setBackground(Color.WHITE);
         buttonPanel.setBorder(new CompoundBorder(
                 new LineBorder(new Color(226, 232, 240), 1, true),
@@ -123,7 +118,7 @@ public class CreateReminderDialog extends JDialog {
 
         submitButton = new JButton("Create Reminder");
         submitButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        submitButton.setBackground(new Color(13, 148, 136)); // Teal
+        submitButton.setBackground(new Color(13, 148, 136));
         submitButton.setForeground(Color.WHITE);
         submitButton.setFocusPainted(false);
         submitButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -155,35 +150,36 @@ public class CreateReminderDialog extends JDialog {
                     petIndexToId.clear();
                     if (pets != null && !pets.isEmpty()) {
                         int idx = 0;
+                        int selectedIdx = 0;
+                        java.util.Set<String> seen = new java.util.HashSet<>();
                         for (PetDTO p : pets) {
-                            petComboBox.addItem(p.getName() + " (" + p.getSpecies() + ", ID: " + p.getId() + ")");
-                            petIndexToId.put(idx++, p.getId());
+                            String key = (p.getId() != null ? p.getId() : p.getName()) + "";
+                            if (seen.add(key)) {
+                                petComboBox.addItem(p.getName() + " (" + p.getSpecies() + ")");
+                                petIndexToId.put(idx, p.getId());
+                                if (preselectedPetId != null && preselectedPetId.equals(p.getId())) {
+                                    selectedIdx = idx;
+                                }
+                                idx++;
+                            }
                         }
-                        petIdField.setText(String.valueOf(pets.get(0).getId()));
+                        petComboBox.setSelectedIndex(selectedIdx);
                     } else {
-                        petComboBox.addItem("Manual Pet ID ->");
+                        petComboBox.addItem("(No pets registered)");
                     }
                 } catch (Exception ex) {
-                    petComboBox.addItem("Manual Pet ID ->");
+                    petComboBox.addItem("(Error loading pets)");
                 }
-
-                petComboBox.addActionListener(e -> {
-                    int sel = petComboBox.getSelectedIndex();
-                    if (petIndexToId.containsKey(sel)) {
-                        petIdField.setText(String.valueOf(petIndexToId.get(sel)));
-                    }
-                });
             }
         };
         worker.execute();
     }
 
     private void submitForm() {
-        Long petId;
-        try {
-            petId = Long.parseLong(petIdField.getText().trim());
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid numeric Pet ID.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+        int petIdx = petComboBox.getSelectedIndex();
+        Long petId = petIndexToId.get(petIdx);
+        if (petId == null) {
+            JOptionPane.showMessageDialog(this, "Please select a registered pet.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -218,24 +214,29 @@ public class CreateReminderDialog extends JDialog {
                 submitButton.setText("Create Reminder");
                 try {
                     ReminderDTO created = get();
-                    JOptionPane.showMessageDialog(CreateReminderDialog.this,
-                            "Reminder successfully scheduled!\n" +
-                                    "Pet: " + (created.getPetName() != null ? created.getPetName() : "Pet #" + created.getPetId()) + "\n" +
+                    JOptionPane.showMessageDialog(
+                            CreateReminderDialog.this,
+                            "Reminder created successfully!\n" +
+                                    "Pet: " + created.getPetName() + "\n" +
                                     "Type: " + created.getType() + "\n" +
                                     "Due Date: " + created.getDueDate(),
-                            "Reminder Created",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    if (onSuccess != null) onSuccess.run();
+                            "Reminder Scheduled",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                    if (onSuccess != null) {
+                        onSuccess.run();
+                    }
                     dispose();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(CreateReminderDialog.this,
+                    JOptionPane.showMessageDialog(
+                            CreateReminderDialog.this,
                             "Failed to schedule reminder: " + ex.getMessage(),
                             "Error",
-                            JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.ERROR_MESSAGE
+                    );
                 }
             }
         };
         worker.execute();
     }
 }
-

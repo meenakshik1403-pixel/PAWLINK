@@ -160,6 +160,14 @@ public class PaymentDAO {
         return jdbcTemplate.update(sql, status, paymentId) > 0;
     }
 
+    /**
+     * Updates payment status for a given booking ID.
+     */
+    public boolean updateStatusByBookingId(Long bookingId, String status) {
+        String sql = "UPDATE payments SET status = ? WHERE booking_id = ?";
+        return jdbcTemplate.update(sql, status, bookingId) > 0;
+    }
+
     private Long extractGeneratedId(KeyHolder keyHolder) {
         if (keyHolder == null) return null;
         if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {

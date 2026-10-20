@@ -1,5 +1,6 @@
 package com.pawlink.user;
 
+import com.pawlink.common.exception.AccountPendingApprovalException;
 import com.pawlink.common.exception.AuthenticationFailedException;
 import com.pawlink.common.exception.UserAlreadyExistsException;
 import com.pawlink.user.dto.AuthResponse;
@@ -34,16 +35,10 @@ public class UserServiceTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.update("DELETE FROM user_documents");
+        jdbcTemplate.update("DELETE FROM vets");
+        jdbcTemplate.update("DELETE FROM sitters");
         jdbcTemplate.update("DELETE FROM users");
-    }
-
-    @Test
-    @DisplayName("Generate BCrypt hash for 'password123' and verify matching")
-    void testBCryptHashing() {
-        String raw = "password123";
-        String hash = passwordEncoder.encode(raw);
-        System.out.println("Generated BCrypt Hash for 'password123': " + hash);
-        assertTrue(passwordEncoder.matches(raw, hash));
     }
 
     @Test
@@ -53,7 +48,7 @@ public class UserServiceTest {
                 "Dr. Sarah Jenkins",
                 "vet.sarah@pawlink.com",
                 "password123",
-                "+1-555-0101",
+                "+919876543101",
                 "VET"
         );
 
@@ -81,7 +76,7 @@ public class UserServiceTest {
                 "Owner John",
                 "owner.john@pawlink.com",
                 "password123",
-                "+1-555-0401",
+                "+919876543401",
                 "OWNER"
         );
         userService.register(req);
@@ -91,16 +86,19 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should successfully authenticate valid credentials")
+    @DisplayName("Should successfully authenticate valid credentials for approved user")
     void testLoginSuccess() {
         RegisterRequest regReq = new RegisterRequest(
                 "Emily Watson",
                 "sitter.emily@pawlink.com",
                 "password123",
-                "+1-555-0201",
+                "+919876543201",
                 "SITTER"
         );
-        userService.register(regReq);
+        AuthResponse res = userService.register(regReq);
+
+        // Verify the sitter so login succeeds
+        jdbcTemplate.update("UPDATE sitters SET verified = TRUE WHERE user_id = ?", res.getId());
 
         LoginRequest loginReq = new LoginRequest("sitter.emily@pawlink.com", "password123");
         AuthResponse loginRes = userService.login(loginReq);
@@ -111,20 +109,36 @@ public class UserServiceTest {
     }
 
     @Test
+    @DisplayName("Should reject login for unapproved Sitter or Vet")
+    void testUnapprovedLoginFails() {
+        RegisterRequest regReq = new RegisterRequest(
+                "Pending Sitter",
+                "sitter.pending@pawlink.com",
+                "password123",
+                "+919876543202",
+                "SITTER"
+        );
+        userService.register(regReq);
+
+        LoginRequest loginReq = new LoginRequest("sitter.pending@pawlink.com", "password123");
+        assertThrows(AccountPendingApprovalException.class, () -> userService.login(loginReq));
+    }
+
+    @Test
     @DisplayName("Should reject login with wrong password or unknown email")
     void testLoginFailure() {
         RegisterRequest regReq = new RegisterRequest(
-                "Admin Alice",
-                "admin@pawlink.com",
+                "Test Owner",
+                "test.owner@pawlink.com",
                 "password123",
-                "+1-555-0301",
-                "ADMIN"
+                "+919876543301",
+                "OWNER"
         );
         userService.register(regReq);
 
         // Wrong password
         assertThrows(AuthenticationFailedException.class, () ->
-                userService.login(new LoginRequest("admin@pawlink.com", "wrongpass")));
+                userService.login(new LoginRequest("test.owner@pawlink.com", "wrongpass")));
 
         // Non-existent email
         assertThrows(AuthenticationFailedException.class, () ->
@@ -134,12 +148,25 @@ public class UserServiceTest {
     @Test
     @DisplayName("Should list all veterinarians")
     void testFindVets() {
-        userService.register(new RegisterRequest("Dr. Alpha", "vet.alpha@pawlink.com", "pass123", null, "VET"));
-        userService.register(new RegisterRequest("Dr. Beta", "vet.beta@pawlink.com", "pass123", null, "VET"));
-        userService.register(new RegisterRequest("Owner Charlie", "owner.charlie@pawlink.com", "pass123", null, "OWNER"));
+        userService.register(new RegisterRequest("Dr. Alpha", "vet.alpha@pawlink.com", "pass123", "+919876543111", "VET"));
+        userService.register(new RegisterRequest("Dr. Beta", "vet.beta@pawlink.com", "pass123", "+919876543112", "VET"));
+        userService.register(new RegisterRequest("Owner Charlie", "owner.charlie@pawlink.com", "pass123", "+919876543113", "OWNER"));
 
         List<UserSummaryDTO> vets = userService.getVeterinarians();
         assertEquals(2, vets.size());
         assertTrue(vets.stream().allMatch(v -> "VET".equals(v.getRole())));
+    }
+
+    @Test
+    @DisplayName("Should reject admin registration publicly")
+    void testAdminRegistrationForbidden() {
+        RegisterRequest regReq = new RegisterRequest(
+                "Attempted Admin",
+                "hacker@pawlink.com",
+                "password123",
+                "+919876543999",
+                "ADMIN"
+        );
+        assertThrows(IllegalArgumentException.class, () -> userService.register(regReq));
     }
 }

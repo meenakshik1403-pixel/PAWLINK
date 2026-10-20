@@ -14,16 +14,11 @@
   },
   "forwardPorts": [
     8080,
-    8081,
     6080
   ],
   "portsAttributes": {
     "8080": {
       "label": "PawLink Backend REST API (LAN)",
-      "onAutoForward": "notify"
-    },
-    "8081": {
-      "label": "PawLink Web Portal (LAN)",
       "onAutoForward": "notify"
     },
     "6080": {
@@ -54,4 +49,3 @@
   },
   "remoteUser": "vscode"
 }
-

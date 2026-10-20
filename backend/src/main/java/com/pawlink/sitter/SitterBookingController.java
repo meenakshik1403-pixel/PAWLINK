@@ -130,5 +130,40 @@ public class SitterBookingController {
     public ResponseEntity<List<CheckinResponse>> getCheckins(@PathVariable("id") Long id) {
         return ResponseEntity.ok(bookingService.getCheckins(id));
     }
+
+    /**
+     * PATCH /api/sitter-bookings/{id}/status: Update status of a booking (e.g. CANCELLED, COMPLETED).
+     */
+    @PatchMapping("/sitter-bookings/{id}/status")
+    public ResponseEntity<BookingResponse> updateBookingStatus(
+            @PathVariable("id") Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body,
+            @RequestParam(name = "status", required = false) String statusParam
+    ) {
+        String status = statusParam != null ? statusParam : (body != null ? body.get("status") : null);
+        if (status == null || status.trim().isEmpty()) {
+            throw new IllegalArgumentException("Booking status is required (e.g. CANCELLED or COMPLETED)");
+        }
+        SittingBooking updated = bookingService.updateBookingStatus(id, status.trim().toUpperCase());
+        return ResponseEntity.ok(BookingResponse.from(updated));
+    }
+
+    /**
+     * POST /api/sitter-bookings/{id}/cancel: Cancel booking and refund escrow payment.
+     */
+    @PostMapping("/sitter-bookings/{id}/cancel")
+    public ResponseEntity<BookingResponse> cancelBooking(@PathVariable("id") Long id) {
+        SittingBooking updated = bookingService.updateBookingStatus(id, "CANCELLED");
+        return ResponseEntity.ok(BookingResponse.from(updated));
+    }
+
+    /**
+     * POST /api/sitter-bookings/{id}/complete: End session and release escrow payment to sitter.
+     */
+    @PostMapping("/sitter-bookings/{id}/complete")
+    public ResponseEntity<BookingResponse> completeBooking(@PathVariable("id") Long id) {
+        SittingBooking updated = bookingService.updateBookingStatus(id, "COMPLETED");
+        return ResponseEntity.ok(BookingResponse.from(updated));
+    }
 }
 

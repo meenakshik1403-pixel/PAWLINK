@@ -79,7 +79,7 @@ public class SitterDTO {
 
     @Override
     public String toString() {
-        return (verified ? "✅ " : "⏳ ") + name + " ($" + (hourlyRate != null ? hourlyRate : "0.00") + "/hr)";
+        return (verified ? "✅ " : "⏳ ") + name + " (₹" + (hourlyRate != null ? hourlyRate : "0.00") + "/hr)";
     }
 }
 

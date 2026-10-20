@@ -4,14 +4,13 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      # Mount ONLY the project directory to isolate host filesystem and host files from AI tools
+      # Mount ONLY the project directory to isolate host filesystem and host files
       - ..:/workspaces/PAWLINK:cached
       # Persist Maven dependencies across rebuilds so deps are cached locally inside Docker
       - pawlink-m2-cache:/home/vscode/.m2
-    # Bind ports to 0.0.0.0 so backend, web portal, and Swing noVNC GUI are accessible over LAN
+    # Bind ports to 0.0.0.0 so backend and Swing noVNC GUI are accessible over LAN
     ports:
       - "0.0.0.0:8080:8080"   # Spring Boot Backend REST API
-      - "0.0.0.0:8081:8081"   # Spring Boot Web Portal
       - "0.0.0.0:6080:6080"   # noVNC Browser GUI for Java Swing Desktop Client
       - "0.0.0.0:5901:5901"   # VNC server port (optional native VNC clients)
     env_file:

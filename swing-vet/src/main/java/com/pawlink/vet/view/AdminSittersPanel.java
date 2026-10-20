@@ -1,37 +1,38 @@
 package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
+import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
 import com.pawlink.vet.base.Dialogs;
 import com.pawlink.vet.model.SitterDTO;
+import com.pawlink.vet.model.UserDocumentDTO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Admin Panel for verifying pet sitters (P8 Admin Vertical).
- * Extends BasePanel and uses BaseTableModel<SitterDTO>.
+ * Admin Panel for verifying Pet Sitters and reviewing their submitted ID cards and qualifications.
+ * Extends BasePanel.
  */
 public class AdminSittersPanel extends BasePanel {
 
-    private final BaseTableModel<SitterDTO> tableModel;
-    private final JTable table;
-    private final JLabel countLabel = new JLabel("Loading sitters...");
+    private final BaseTableModel<SitterDTO> sitterTableModel;
+    private final JTable sitterTable;
+    private final JLabel sitterCountLabel = new JLabel("Loading sitters...");
     private List<SitterDTO> sittersList = new ArrayList<>();
 
     public AdminSittersPanel() {
-        super("✅ Pet Sitter Verification Queue", "Review registered sitter applications and approve verified sitters for public bookings.");
+        super("✅ Pet Sitter Approvals", "Review submitted credentials, ID cards, and qualification proof to approve Pet Sitters.");
 
-        String[] cols = {"User ID", "Sitter Name", "Email Address", "Phone", "Hourly Rate", "Status"};
-        this.tableModel = new BaseTableModel<>(cols) {
+        // Setup Sitters Table
+        String[] sitterCols = {"User ID", "Sitter Name", "Email Address", "Phone", "Hourly Rate", "Status"};
+        this.sitterTableModel = new BaseTableModel<>(sitterCols) {
             @Override
             public Object getValueAt(SitterDTO s, int col) {
                 return switch (col) {
@@ -39,21 +40,20 @@ public class AdminSittersPanel extends BasePanel {
                     case 1 -> s.getName();
                     case 2 -> s.getEmail();
                     case 3 -> s.getPhone() != null ? s.getPhone() : "-";
-                    case 4 -> "$" + (s.getHourlyRate() != null ? s.getHourlyRate() : "0.00") + " / hr";
+                    case 4 -> "₹" + (s.getHourlyRate() != null ? s.getHourlyRate() : "0.00") + " / hr";
                     case 5 -> s.isVerified() ? "VERIFIED" : "PENDING";
                     default -> "";
                 };
             }
         };
-
-        this.table = new JTable(tableModel);
+        this.sitterTable = new JTable(sitterTableModel);
 
         setupUI();
         loadSitters();
     }
 
     private void setupUI() {
-        // Header Accessory
+        // Global Header Accessory: Refresh and Action buttons
         JPanel accessory = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         accessory.setOpaque(false);
 
@@ -62,7 +62,12 @@ public class AdminSittersPanel extends BasePanel {
         refreshBtn.addActionListener(e -> loadSitters());
         accessory.add(refreshBtn);
 
-        JButton approveBtn = new JButton("✅ Approve Selected Sitter");
+        JButton viewDocsBtn = new JButton("📄 View Documents");
+        viewDocsBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        viewDocsBtn.addActionListener(e -> handleViewDocuments());
+        accessory.add(viewDocsBtn);
+
+        JButton approveBtn = new JButton("✅ Approve Sitter");
         approveBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         approveBtn.setBackground(new Color(16, 185, 129)); // Green
         approveBtn.setForeground(Color.WHITE);
@@ -72,10 +77,26 @@ public class AdminSittersPanel extends BasePanel {
 
         setHeaderAccessory(accessory);
 
-        // Center Table
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 10));
-        centerPanel.setOpaque(false);
+        // Style Table
+        styleTable(sitterTable, 5);
 
+        // Build Panel
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 10));
+        mainPanel.setOpaque(false);
+        mainPanel.add(new JScrollPane(sitterTable), BorderLayout.CENTER);
+
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.setOpaque(false);
+        bottom.setBorder(new EmptyBorder(6, 6, 6, 6));
+        sitterCountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        sitterCountLabel.setForeground(new Color(100, 116, 139));
+        bottom.add(sitterCountLabel, BorderLayout.WEST);
+        mainPanel.add(bottom, BorderLayout.SOUTH);
+
+        setContent(mainPanel);
+    }
+
+    private void styleTable(JTable table, int statusColIndex) {
         table.setRowHeight(36);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -83,8 +104,7 @@ public class AdminSittersPanel extends BasePanel {
         table.setShowGrid(true);
         table.setGridColor(new Color(241, 245, 249));
 
-        // Verification Status Renderer
-        table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+        table.getColumnModel().getColumn(statusColIndex).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected,
                                                            boolean hasFocus, int row, int col) {
@@ -98,38 +118,15 @@ public class AdminSittersPanel extends BasePanel {
                 } else {
                     l.setText("⏳ Pending Approval");
                     l.setForeground(new Color(217, 119, 6));
-                    l.setFont(l.getFont().deriveFont(Font.BOLD));
+                    l.setFont(l.getFont().deriveFont(Font.PLAIN));
                 }
                 return l;
             }
         });
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240)));
-        centerPanel.add(scrollPane, BorderLayout.CENTER);
-
-        // Bottom Bar
-        JPanel bottomBar = new JPanel(new BorderLayout());
-        bottomBar.setOpaque(false);
-        bottomBar.setBorder(new EmptyBorder(6, 6, 6, 6));
-
-        countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        countLabel.setForeground(new Color(100, 116, 139));
-        bottomBar.add(countLabel, BorderLayout.WEST);
-
-        JLabel tip = new JLabel("💡 Approving a sitter unlocks their profile for owner bookings immediately.");
-        tip.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        tip.setForeground(new Color(148, 163, 184));
-        bottomBar.add(tip, BorderLayout.EAST);
-
-        centerPanel.add(bottomBar, BorderLayout.SOUTH);
-
-        setContent(centerPanel);
     }
 
     public void loadSitters() {
-        countLabel.setText("Fetching sitters...");
-
+        sitterCountLabel.setText("Fetching sitters...");
         SwingWorker<List<SitterDTO>, Void> worker = new SwingWorker<>() {
             @Override
             protected List<SitterDTO> doInBackground() {
@@ -144,66 +141,128 @@ public class AdminSittersPanel extends BasePanel {
             protected void done() {
                 try {
                     sittersList = get();
-                    tableModel.setItems(sittersList);
+                    sitterTableModel.setItems(sittersList);
                     long pendingCount = sittersList.stream().filter(s -> !s.isVerified()).count();
-                    countLabel.setText("Total: " + sittersList.size() + " sitters (" + pendingCount + " pending approval).");
+                    sitterCountLabel.setText("Total: " + sittersList.size() + " sitters (" + pendingCount + " pending approval).");
                 } catch (Exception ex) {
-                    showError("Failed to load sitters: " + ex.getMessage());
+                    sitterCountLabel.setText("Failed to load sitters: " + ex.getMessage());
                 }
             }
         };
         worker.execute();
     }
 
-    private void handleApproveSelected() {
-        int row = table.getSelectedRow();
+    private void handleViewDocuments() {
+        int row = sitterTable.getSelectedRow();
         if (row < 0) {
-            Dialogs.showWarning(this, "Please select a sitter from the queue to approve.");
+            Dialogs.showWarning(this, "Please select a sitter to view their uploaded documents.");
             return;
         }
+        SitterDTO s = sitterTableModel.getItem(row);
+        Long targetUserId = s.getUserId();
+        String targetName = s.getName();
 
-        SitterDTO selected = tableModel.getItem(row);
-        if (selected == null) return;
-
-        if (selected.isVerified()) {
-            Dialogs.showInfo(this, "Sitter '" + selected.getName() + "' is already verified.");
-            return;
-        }
-
-        boolean confirm = Dialogs.showConfirm(this,
-                "Are you sure you want to approve sitter '" + selected.getName() + "'?\n" +
-                "This will allow pet parents to book sessions with them immediately.",
-                "Confirm Sitter Approval");
-
-        if (!confirm) return;
-
-        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+        SwingWorker<List<UserDocumentDTO>, Void> worker = new SwingWorker<>() {
             @Override
-            protected Void doInBackground() throws Exception {
-                // Execute PATCH /api/admin/sitters/{id}/approve
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("http://localhost:8080/api/admin/sitters/" + selected.getUserId() + "/approve"))
-                        .method("PATCH", HttpRequest.BodyPublishers.noBody())
-                        .header("Accept", "application/json")
-                        .build();
-
-                java.net.http.HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding());
-                return null;
+            protected List<UserDocumentDTO> doInBackground() {
+                return ApiClient.getInstance().getList("/api/admin/documents/" + targetUserId, UserDocumentDTO.class);
             }
 
             @Override
             protected void done() {
                 try {
-                    get();
-                    Dialogs.showSuccess(AdminSittersPanel.this,
-                            "✓ Sitter '" + selected.getName() + "' has been successfully verified!");
-                    loadSitters();
+                    List<UserDocumentDTO> docs = get();
+                    if (docs == null || docs.isEmpty()) {
+                        Dialogs.showInfo(AdminSittersPanel.this, "No uploaded documents found for " + targetName + ".");
+                        return;
+                    }
+                    showDocumentsDialog(targetName, docs);
                 } catch (Exception ex) {
-                    showError("Failed to approve sitter: " + ex.getMessage());
+                    showError("Failed to fetch documents: " + ex.getMessage());
                 }
             }
         };
         worker.execute();
     }
-}
 
+    private void showDocumentsDialog(String name, List<UserDocumentDTO> docs) {
+        JDialog docDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Verification Documents - " + name, true);
+        docDialog.setSize(520, 320);
+        docDialog.setLocationRelativeTo(this);
+        docDialog.setLayout(new BorderLayout());
+
+        JPanel header = new JPanel(new GridLayout(2, 1, 0, 4));
+        header.setBorder(new EmptyBorder(12, 16, 12, 16));
+        header.setBackground(new Color(238, 242, 255));
+
+        JLabel t = new JLabel("Submitted Verification Documents for " + name);
+        t.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        t.setForeground(new Color(67, 56, 202));
+        header.add(t);
+
+        JLabel sub = new JLabel("Click any document below to open and inspect the PDF.");
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        sub.setForeground(new Color(107, 114, 128));
+        header.add(sub);
+        docDialog.add(header, BorderLayout.NORTH);
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setBorder(new EmptyBorder(14, 16, 14, 16));
+
+        for (UserDocumentDTO doc : docs) {
+            JPanel card = new JPanel(new BorderLayout(10, 0));
+            card.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(226, 232, 240)),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)
+            ));
+
+            String typeDisplay = "ID_CARD".equalsIgnoreCase(doc.getDocumentType()) ? "🪪 ID Card Proof" : "📜 Qualifications & Experience Certificate";
+            JLabel info = new JLabel("<html><b>" + typeDisplay + "</b><br/>" + doc.getFileName() + " (" + String.format("%.2f", doc.getFileSize() / (1024.0 * 1024.0)) + " MB)</html>");
+            info.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            card.add(info, BorderLayout.CENTER);
+
+            JButton openBtn = new JButton("🌐 Open PDF");
+            openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            openBtn.addActionListener(e -> {
+                try {
+                    String url = "http://localhost:8080/api/admin/documents/download/" + doc.getId() + "?adminId=" + Session.getInstance().getUserId();
+                    Desktop.getDesktop().browse(URI.create(url));
+                } catch (Exception ex) {
+                    Dialogs.showError(docDialog, "Could not open document viewer: " + ex.getMessage());
+                }
+            });
+            card.add(openBtn, BorderLayout.EAST);
+
+            listPanel.add(card);
+            listPanel.add(Box.createVerticalStrut(8));
+        }
+
+        docDialog.add(new JScrollPane(listPanel), BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton closeBtn = new JButton("Close");
+        closeBtn.addActionListener(e -> docDialog.dispose());
+        footer.add(closeBtn);
+        docDialog.add(footer, BorderLayout.SOUTH);
+
+        docDialog.setVisible(true);
+    }
+
+    private void handleApproveSelected() {
+        int row = sitterTable.getSelectedRow();
+        if (row < 0) {
+            Dialogs.showWarning(this, "Please select a sitter from the queue to approve.");
+            return;
+        }
+        SitterDTO s = sitterTableModel.getItem(row);
+        if (s.isVerified()) {
+            Dialogs.showInfo(this, "Sitter '" + s.getName() + "' is already verified.");
+            return;
+        }
+
+        Frame parent = (Frame) SwingUtilities.getWindowAncestor(this);
+        ApproveSitterDialog dialog = new ApproveSitterDialog(parent, s, this::loadSitters);
+        dialog.setVisible(true);
+    }
+}

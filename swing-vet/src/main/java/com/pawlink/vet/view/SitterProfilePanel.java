@@ -124,7 +124,7 @@ public class SitterProfilePanel extends BasePanel {
                     nameLabel.setText(s.getName());
                     emailLabel.setText(s.getEmail());
                     phoneLabel.setText(s.getPhone() != null ? s.getPhone() : "Not provided");
-                    rateLabel.setText("$" + (s.getHourlyRate() != null ? s.getHourlyRate() : "25.00") + " / hour");
+                    rateLabel.setText("₹" + (s.getHourlyRate() != null ? s.getHourlyRate() : "250.00") + " / hour");
 
                     if (s.isVerified()) {
                         statusBadge.setText("✓ VERIFIED PET SITTER (Eligible for bookings)");

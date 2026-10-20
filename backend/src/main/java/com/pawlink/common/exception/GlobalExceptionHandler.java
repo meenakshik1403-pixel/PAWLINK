@@ -29,6 +29,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorPayload(ex.getMessage()));
     }
 
+    @ExceptionHandler(AccountPendingApprovalException.class)
+    public ResponseEntity<Map<String, String>> handleAccountPendingApproval(AccountPendingApprovalException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorPayload(ex.getMessage()));
+    }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<Map<String, String>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorPayload(ex.getMessage()));

@@ -24,7 +24,6 @@ public class LoginFrame extends JFrame {
     private JPasswordField passwordField;
     private JButton loginButton;
     private JButton registerButton;
-    private JCheckBox strictVetOnlyCheckBox;
     private JLabel statusLabel;
 
     public LoginFrame() {
@@ -34,7 +33,7 @@ public class LoginFrame extends JFrame {
 
     private void initUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(480, 520);
+        setSize(480, 480);
         setLocationRelativeTo(null);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -107,18 +106,7 @@ public class LoginFrame extends JFrame {
             }
         });
 
-        formContainer.add(Box.createVerticalStrut(12));
-
-        // Strict Vet-Only checkbox (per proposal requirement / testing toggle)
-        strictVetOnlyCheckBox = new JCheckBox("Strict Vet-Only desktop client rule", false);
-        strictVetOnlyCheckBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        strictVetOnlyCheckBox.setBackground(Color.WHITE);
-        strictVetOnlyCheckBox.setForeground(new Color(100, 116, 139));
-        strictVetOnlyCheckBox.setToolTipText("If enabled, non-VET roles will be blocked with: 'Access Denied: Only veterinarians can log into this desktop client.'");
-        strictVetOnlyCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(strictVetOnlyCheckBox);
-
-        formContainer.add(Box.createVerticalStrut(14));
+        formContainer.add(Box.createVerticalStrut(10));
 
         // Status Label for inline messages
         statusLabel = new JLabel(" ");
@@ -127,7 +115,7 @@ public class LoginFrame extends JFrame {
         statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         formContainer.add(statusLabel);
 
-        formContainer.add(Box.createVerticalStrut(8));
+        formContainer.add(Box.createVerticalStrut(10));
 
         // Action Buttons (Login + Register)
         JPanel actionButtonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
@@ -149,7 +137,7 @@ public class LoginFrame extends JFrame {
         actionButtonPanel.add(loginButton);
         formContainer.add(actionButtonPanel);
 
-        formContainer.add(Box.createVerticalStrut(16));
+        formContainer.add(Box.createVerticalStrut(18));
 
         // Quick Demo Fill Toolbar for easy viva grading
         JLabel demoLbl = new JLabel("Quick Demo Logins:");
@@ -218,32 +206,6 @@ public class LoginFrame extends JFrame {
             try {
                 LoginRequestDTO req = new LoginRequestDTO(email, password);
                 AuthResponseDTO res = ApiClient.getInstance().post("/api/auth/login", req, AuthResponseDTO.class);
-
-                // Check role restrictions
-                boolean isVet = "VET".equalsIgnoreCase(res.getRole());
-
-                if (strictVetOnlyCheckBox.isSelected() && !isVet) {
-                    Dialogs.showError(this, "Access Denied: Only veterinarians can log into this desktop client.");
-                    statusLabel.setText("Access Denied: Only veterinarians permitted in strict vet mode.");
-                    statusLabel.setForeground(new Color(220, 38, 38));
-                    return;
-                }
-
-                // If role != VET and not in strict mode, confirm opening unified portal
-                if (!isVet) {
-                    boolean proceed = Dialogs.showConfirm(
-                            this,
-                            "User '" + res.getName() + "' is registered as a " + res.getRole() + ".\n" +
-                            "Would you like to open the Unified PawLink Desktop Portal for this role?",
-                            "Role Notice"
-                    );
-                    if (!proceed) {
-                        Dialogs.showError(this, "Access Denied: Only veterinarians can log into this desktop client.");
-                        statusLabel.setText("Access Denied: User role is " + res.getRole());
-                        statusLabel.setForeground(new Color(220, 38, 38));
-                        return;
-                    }
-                }
 
                 // Store in Session singleton
                 Session.getInstance().login(res.getId(), res.getName(), res.getEmail(), res.getRole());

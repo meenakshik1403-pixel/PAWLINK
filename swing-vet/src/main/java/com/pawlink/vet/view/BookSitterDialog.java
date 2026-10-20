@@ -1,7 +1,6 @@
 package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
-import com.pawlink.vet.api.ApiException;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.Dialogs;
 import com.pawlink.vet.model.PetDTO;
@@ -9,25 +8,28 @@ import com.pawlink.vet.model.SitterDTO;
 import com.pawlink.vet.model.SittingBookingDTO;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Modal Dialog for pet owners to configure dates, choose pets, and confirm sitter bookings.
- * Pairs with P7 payment processing by displaying the escrow payment method and total fee.
+ * Interactive Dialog for booking an approved pet sitter with escrow payment hold.
+ * Allows selecting the pet, date/time interval, and simulated payment method (CARD, UPI, WALLET).
  */
 public class BookSitterDialog extends JDialog {
 
     private final SitterDTO sitter;
     private final Runnable onSuccess;
+
     private final JComboBox<PetDTO> petComboBox;
     private final JSpinner startSpinner;
     private final JSpinner endSpinner;
@@ -43,8 +45,8 @@ public class BookSitterDialog extends JDialog {
         this.petComboBox = new JComboBox<>();
         this.startSpinner = new JSpinner(new SpinnerDateModel());
         this.endSpinner = new JSpinner(new SpinnerDateModel());
-        this.paymentMethodCombo = new JComboBox<>(new String[]{"CARD", "UPI", "WALLET"});
-        this.calculationLabel = new JLabel("Estimated total: $0.00 (0 hours)");
+        this.paymentMethodCombo = new JComboBox<>(new String[]{"UPI", "CARD", "WALLET"});
+        this.calculationLabel = new JLabel("Estimated total: ₹0.00 (0 hours)");
         this.confirmButton = new JButton("Confirm Booking & Escrow Hold");
 
         initUI();
@@ -67,8 +69,8 @@ public class BookSitterDialog extends JDialog {
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel, BorderLayout.NORTH);
 
-        JLabel sitterInfo = new JLabel("Sitter: " + sitter.getName() + " | Rate: $" +
-                (sitter.getHourlyRate() != null ? sitter.getHourlyRate() : "25.00") + " / hr " +
+        JLabel sitterInfo = new JLabel("Sitter: " + sitter.getName() + " | Rate: ₹" +
+                (sitter.getHourlyRate() != null ? sitter.getHourlyRate() : "250.00") + " / hr " +
                 (sitter.isVerified() ? "✓ Verified" : "⏳ Pending"));
         sitterInfo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         sitterInfo.setForeground(new Color(203, 213, 225));
@@ -84,98 +86,111 @@ public class BookSitterDialog extends JDialog {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(8, 6, 8, 6);
-        gbc.gridx = 0;
-        gbc.gridy = 0;
 
         // 1. Pet Selector
-        gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.35;
         JLabel petLabel = new JLabel("Select Pet:");
         petLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         bodyPanel.add(petLabel, gbc);
 
-        gbc.gridx = 1;
+        gbc.gridx = 1; gbc.weightx = 0.65;
         petComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        petComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                           boolean isSelected, boolean cellHasFocus) {
+                JLabel lbl = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof PetDTO pet) {
+                    lbl.setText(pet.getName() + " (" + pet.getSpecies() + ")");
+                }
+                return lbl;
+            }
+        });
         bodyPanel.add(petComboBox, gbc);
 
         // 2. Start Date & Time
-        gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridx = 0; gbc.gridy = 1;
         JLabel startLabel = new JLabel("Start Time:");
         startLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         bodyPanel.add(startLabel, gbc);
 
         gbc.gridx = 1;
-        JSpinner.DateEditor startEditor = new JSpinner.DateEditor(startSpinner, "yyyy-MM-dd HH:mm");
-        startSpinner.setEditor(startEditor);
-        Date defaultStart = new Date(System.currentTimeMillis() + 86400000L); // Tomorrow
-        startSpinner.setValue(defaultStart);
+        startSpinner.setEditor(new JSpinner.DateEditor(startSpinner, "yyyy-MM-dd HH:mm"));
         startSpinner.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         startSpinner.addChangeListener(e -> updateCalculation());
         bodyPanel.add(startSpinner, gbc);
 
         // 3. End Date & Time
-        gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridx = 0; gbc.gridy = 2;
         JLabel endLabel = new JLabel("End Time:");
         endLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         bodyPanel.add(endLabel, gbc);
 
         gbc.gridx = 1;
-        JSpinner.DateEditor endEditor = new JSpinner.DateEditor(endSpinner, "yyyy-MM-dd HH:mm");
-        endSpinner.setEditor(endEditor);
-        Date defaultEnd = new Date(defaultStart.getTime() + 14400000L); // +4 hours
+        // Default end time = start time + 3 hours
+        Date now = new Date();
+        startSpinner.setValue(now);
+        Date defaultEnd = new Date(now.getTime() + (3 * 3600 * 1000));
         endSpinner.setValue(defaultEnd);
+        endSpinner.setEditor(new JSpinner.DateEditor(endSpinner, "yyyy-MM-dd HH:mm"));
         endSpinner.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         endSpinner.addChangeListener(e -> updateCalculation());
         bodyPanel.add(endSpinner, gbc);
 
         // 4. Payment Method
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        JLabel paymentLabel = new JLabel("Payment Method:");
-        paymentLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        bodyPanel.add(paymentLabel, gbc);
+        gbc.gridx = 0; gbc.gridy = 3;
+        JLabel payLabel = new JLabel("Payment Method:");
+        payLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        bodyPanel.add(payLabel, gbc);
 
         gbc.gridx = 1;
         paymentMethodCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         bodyPanel.add(paymentMethodCombo, gbc);
 
-        // 5. Fee Summary Box
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.gridwidth = 2;
-        JPanel calcBox = new JPanel(new BorderLayout());
-        calcBox.setBackground(new Color(241, 245, 249));
-        calcBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(203, 213, 225)),
-                new EmptyBorder(12, 12, 12, 12)
+        // 5. Escrow Fee Summary Card
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.insets = new Insets(16, 6, 8, 6);
+
+        JPanel summaryCard = new JPanel(new BorderLayout(8, 6));
+        summaryCard.setBackground(new Color(241, 245, 249));
+        summaryCard.setBorder(new CompoundBorder(
+                new LineBorder(new Color(203, 213, 225), 1, true),
+                new EmptyBorder(12, 16, 12, 16)
         ));
+
+        JLabel summaryTitle = new JLabel("🛡️ Escrow Payment Protection");
+        summaryTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        summaryTitle.setForeground(new Color(15, 23, 42));
+        summaryCard.add(summaryTitle, BorderLayout.NORTH);
 
         calculationLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         calculationLabel.setForeground(new Color(30, 41, 59));
-        calcBox.add(calculationLabel, BorderLayout.NORTH);
+        summaryCard.add(calculationLabel, BorderLayout.CENTER);
 
-        JLabel escrowNote = new JLabel("🔒 Funds will be held in Escrow (status: HELD) until job is completed.");
+        JLabel escrowNote = new JLabel("<html>Funds are held safely in escrow and only released after sitting completes.</html>");
         escrowNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         escrowNote.setForeground(new Color(100, 116, 139));
-        calcBox.add(escrowNote, BorderLayout.SOUTH);
+        summaryCard.add(escrowNote, BorderLayout.SOUTH);
 
-        bodyPanel.add(calcBox, gbc);
+        bodyPanel.add(summaryCard, gbc);
 
         add(bodyPanel, BorderLayout.CENTER);
 
         // Footer Actions
         JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
         footerPanel.setBackground(new Color(248, 250, 252));
-        footerPanel.setBorder(new EmptyBorder(4, 15, 8, 15));
+        footerPanel.setBorder(new CompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)),
+                new EmptyBorder(4, 16, 8, 16)
+        ));
 
         JButton cancelButton = new JButton("Cancel");
-        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cancelButton.addActionListener(e -> dispose());
         footerPanel.add(cancelButton);
 
-        confirmButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        confirmButton.setBackground(new Color(16, 185, 129)); // Green
+        confirmButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        confirmButton.setBackground(new Color(79, 70, 229)); // Indigo
         confirmButton.setForeground(Color.WHITE);
         confirmButton.setFocusable(false);
         confirmButton.addActionListener(e -> handleConfirmBooking());
@@ -188,10 +203,7 @@ public class BookSitterDialog extends JDialog {
 
     private void loadOwnerPets() {
         Long ownerId = Session.getInstance().getUserId();
-        if (ownerId == null) {
-            Dialogs.showError(this, "Session expired or user not logged in.");
-            return;
-        }
+        if (ownerId == null) return;
 
         SwingWorker<List<PetDTO>, Void> worker = new SwingWorker<>() {
             @Override
@@ -204,16 +216,15 @@ public class BookSitterDialog extends JDialog {
                 try {
                     List<PetDTO> pets = get();
                     petComboBox.removeAllItems();
+                    java.util.Set<String> seen = new java.util.HashSet<>();
                     for (PetDTO pet : pets) {
-                        petComboBox.addItem(pet);
-                    }
-                    if (pets.isEmpty()) {
-                        Dialogs.showWarning(BookSitterDialog.this,
-                                "You haven't registered any pets yet! Please add a pet in 'My Pets' first.");
-                        confirmButton.setEnabled(false);
+                        String key = (pet.getId() != null ? pet.getId() : pet.getName()) + "";
+                        if (seen.add(key)) {
+                            petComboBox.addItem(pet);
+                        }
                     }
                 } catch (Exception ex) {
-                    Dialogs.showError(BookSitterDialog.this, "Failed to load your pets: " + ex.getMessage());
+                    Dialogs.showError(BookSitterDialog.this, "Failed to load owner pets: " + ex.getMessage());
                 }
             }
         };
@@ -225,7 +236,7 @@ public class BookSitterDialog extends JDialog {
         Date endDate = (Date) endSpinner.getValue();
 
         if (startDate == null || endDate == null) {
-            calculationLabel.setText("Estimated total: $0.00");
+            calculationLabel.setText("Estimated total: ₹0.00");
             return;
         }
 
@@ -233,10 +244,10 @@ public class BookSitterDialog extends JDialog {
         long minutes = Math.max(diffMs / 60000, 60);
         long hours = (long) Math.ceil(minutes / 60.0);
 
-        BigDecimal rate = sitter.getHourlyRate() != null ? sitter.getHourlyRate() : BigDecimal.valueOf(25.00);
+        BigDecimal rate = sitter.getHourlyRate() != null ? sitter.getHourlyRate() : BigDecimal.valueOf(250.00);
         BigDecimal total = rate.multiply(BigDecimal.valueOf(hours));
 
-        calculationLabel.setText("Estimated Total: $" + total + " (" + hours + " hrs @ $" + rate + "/hr)");
+        calculationLabel.setText("Estimated Total: ₹" + total + " (" + hours + " hrs @ ₹" + rate + "/hr)");
     }
 
     private void handleConfirmBooking() {
@@ -260,12 +271,14 @@ public class BookSitterDialog extends JDialog {
         String paymentMethod = (String) paymentMethodCombo.getSelectedItem();
         Long ownerId = Session.getInstance().getUserId();
 
+        DateTimeFormatter isoFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
         Map<String, Object> req = new HashMap<>();
         req.put("petId", selectedPet.getPetId());
         req.put("sitterId", sitter.getUserId());
         req.put("ownerId", ownerId);
-        req.put("startTime", start.toString());
-        req.put("endTime", end.toString());
+        req.put("startTime", start.format(isoFmt));
+        req.put("endTime", end.format(isoFmt));
         req.put("paymentMethod", paymentMethod);
 
         confirmButton.setEnabled(false);
@@ -289,7 +302,7 @@ public class BookSitterDialog extends JDialog {
                             "Booking ID: #" + booking.getId() + "\n" +
                             "Pet: " + (booking.getPetName() != null ? booking.getPetName() : selectedPet.getName()) + "\n" +
                             "Sitter: " + (booking.getSitterName() != null ? booking.getSitterName() : sitter.getName()) + "\n" +
-                            "Total Fee: $" + booking.getTotalAmount() + "\n" +
+                            "Total Fee: ₹" + booking.getTotalAmount() + "\n" +
                             "Payment Status: " + booking.getPaymentStatus() + " (Escrow Secured)"
                     );
 

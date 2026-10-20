@@ -22,6 +22,7 @@ import java.util.Map;
 
 /**
  * Modal dialog for booking a veterinary appointment with conflict collision detection.
+ * User selects pet and doctor from intuitive dropdowns without typing manual IDs.
  */
 public class BookAppointmentDialog extends JDialog {
 
@@ -31,20 +32,20 @@ public class BookAppointmentDialog extends JDialog {
     private final JComboBox<String> petComboBox;
     private final Map<Integer, Long> petIndexToId = new HashMap<>();
 
-    private final JTextField petIdManualField;
     private final JTextField dateField;
     private final JComboBox<String> timeSlotComboBox;
     private final JComboBox<String> durationComboBox;
 
     private final JButton bookButton;
     private final JButton cancelButton;
+    private final JButton addPetQuickButton;
     private final Runnable onSuccess;
 
     public BookAppointmentDialog(Frame parent, Runnable onSuccess) {
         super(parent, "📅 Book Veterinary Appointment", true);
         this.onSuccess = onSuccess;
 
-        setSize(520, 500);
+        setSize(520, 480);
         setLocationRelativeTo(parent);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -58,7 +59,7 @@ public class BookAppointmentDialog extends JDialog {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
 
-        JLabel subLabel = new JLabel("Time intervals are checked in real-time to avoid double-booking");
+        JLabel subLabel = new JLabel("Select your pet, choose an available veterinarian, and pick a date & time slot");
         subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         subLabel.setForeground(new Color(148, 163, 184));
 
@@ -85,7 +86,7 @@ public class BookAppointmentDialog extends JDialog {
         vetComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         form.add(vetComboBox, gbc);
 
-        // 2. Pet Selection / Pet ID
+        // 2. Pet Selection
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
         JLabel petLabel = new JLabel("Select Pet *:");
         petLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -94,15 +95,17 @@ public class BookAppointmentDialog extends JDialog {
         gbc.gridx = 1; gbc.weightx = 0.7;
         JPanel petRow = new JPanel(new BorderLayout(8, 0));
         petRow.setOpaque(false);
+
         petComboBox = new JComboBox<>();
         petComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        petIdManualField = new JTextField("1", 5);
-        petIdManualField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        petIdManualField.setToolTipText("Manual Pet ID fallback");
+        addPetQuickButton = new JButton("+ Add Pet");
+        addPetQuickButton.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        addPetQuickButton.setMargin(new Insets(2, 6, 2, 6));
+        addPetQuickButton.addActionListener(e -> openAddPetDialog());
 
         petRow.add(petComboBox, BorderLayout.CENTER);
-        petRow.add(petIdManualField, BorderLayout.EAST);
+        petRow.add(addPetQuickButton, BorderLayout.EAST);
         form.add(petRow, gbc);
 
         // 3. Appointment Date
@@ -170,6 +173,13 @@ public class BookAppointmentDialog extends JDialog {
         loadVetsAndPets();
     }
 
+    private void openAddPetDialog() {
+        Window parentWindow = SwingUtilities.getWindowAncestor(this);
+        Frame parentFrame = parentWindow instanceof Frame ? (Frame) parentWindow : null;
+        AddPetDialog dialog = new AddPetDialog(parentFrame, this::loadVetsAndPets);
+        dialog.setVisible(true);
+    }
+
     private void loadVetsAndPets() {
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             private List<UserDTO> vets;
@@ -197,13 +207,13 @@ public class BookAppointmentDialog extends JDialog {
                 if (vets != null && !vets.isEmpty()) {
                     int i = 0;
                     for (UserDTO vet : vets) {
-                        vetComboBox.addItem(vet.getName() + " (ID: " + vet.getId() + ")");
+                        vetComboBox.addItem(vet.getName());
                         vetIndexToId.put(i++, vet.getId());
                     }
                 } else {
-                    vetComboBox.addItem("Dr. Sarah Jenkins (ID: 1)");
+                    vetComboBox.addItem("Dr. Sarah Jenkins");
                     vetIndexToId.put(0, 1L);
-                    vetComboBox.addItem("Dr. Michael Brown (ID: 2)");
+                    vetComboBox.addItem("Dr. Michael Brown");
                     vetIndexToId.put(1, 2L);
                 }
 
@@ -211,37 +221,34 @@ public class BookAppointmentDialog extends JDialog {
                 petIndexToId.clear();
                 if (pets != null && !pets.isEmpty()) {
                     int i = 0;
+                    java.util.Set<String> seen = new java.util.HashSet<>();
                     for (PetDTO p : pets) {
-                        petComboBox.addItem(p.getName() + " (" + p.getSpecies() + ", ID: " + p.getId() + ")");
-                        petIndexToId.put(i++, p.getId());
-                    }
-                    if (!pets.isEmpty()) {
-                        petIdManualField.setText(String.valueOf(pets.get(0).getId()));
+                        String key = (p.getId() != null ? p.getId() : p.getName()) + "";
+                        if (seen.add(key)) {
+                            petComboBox.addItem(p.getName() + " (" + p.getSpecies() + ")");
+                            petIndexToId.put(i++, p.getId());
+                        }
                     }
                 } else {
-                    petComboBox.addItem("Use Manual Pet ID ->");
+                    petComboBox.addItem("(No pets registered - click + Add Pet)");
                 }
-
-                petComboBox.addActionListener(e -> {
-                    int sel = petComboBox.getSelectedIndex();
-                    if (petIndexToId.containsKey(sel)) {
-                        petIdManualField.setText(String.valueOf(petIndexToId.get(sel)));
-                    }
-                });
             }
         };
         worker.execute();
     }
 
     private void submitBooking() {
-        int vetIdx = vetComboBox.getSelectedIndex();
-        Long vetId = vetIndexToId.getOrDefault(vetIdx, 1L);
+        int petIdx = petComboBox.getSelectedIndex();
+        Long petId = petIndexToId.get(petIdx);
+        if (petId == null) {
+            JOptionPane.showMessageDialog(this, "Please select a pet for the appointment. If you haven't registered a pet yet, click '+ Add Pet'.", "Pet Required", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-        Long petId;
-        try {
-            petId = Long.parseLong(petIdManualField.getText().trim());
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid numeric Pet ID.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+        int vetIdx = vetComboBox.getSelectedIndex();
+        Long vetId = vetIndexToId.get(vetIdx);
+        if (vetId == null) {
+            JOptionPane.showMessageDialog(this, "Please select a veterinarian.", "Doctor Required", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -305,12 +312,12 @@ public class BookAppointmentDialog extends JDialog {
                     dispose();
                 } catch (Exception ex) {
                     String msg = ex.getMessage();
-                    if (msg != null && msg.contains("409")) {
+                    if (msg != null && (msg.contains("409") || msg.toLowerCase().contains("not available") || msg.toLowerCase().contains("collide"))) {
                         JOptionPane.showMessageDialog(
                                 BookAppointmentDialog.this,
                                 "The selected veterinarian is already booked during this time interval.\n" +
-                                        "Please select another time slot.",
-                                "Conflict: Slot Unavailable (409)",
+                                        "Please select another time slot or another doctor.",
+                                "Conflict: Slot Unavailable",
                                 JOptionPane.WARNING_MESSAGE
                         );
                     } else {

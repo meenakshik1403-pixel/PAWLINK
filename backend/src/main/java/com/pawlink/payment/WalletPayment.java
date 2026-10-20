@@ -33,7 +33,7 @@ public class WalletPayment extends Payment {
         // Simulate balance check against wallet limit
         if (getAmount().compareTo(SIMULATED_WALLET_BALANCE) > 0) {
             setStatus("FAILED");
-            throw new PaymentFailedException("Wallet Payment failed: Insufficient wallet balance. Balance limit is $" + SIMULATED_WALLET_BALANCE);
+            throw new PaymentFailedException("Wallet Payment failed: Insufficient wallet balance. Balance limit is ₹" + SIMULATED_WALLET_BALANCE);
         }
 
         setStatus("HELD");

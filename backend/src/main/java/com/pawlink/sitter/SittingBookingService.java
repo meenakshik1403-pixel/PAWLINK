@@ -187,5 +187,37 @@ public class SittingBookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Sitter with ID " + sitterId + " not found"));
         sitterDAO.updateVerification(sitterId, verified);
     }
+
+    /**
+     * Updates booking status (e.g. CANCELLED or COMPLETED) and updates escrow payment status.
+     * When CANCELLED -> Escrow payment is REFUNDED.
+     * When COMPLETED -> Escrow payment is RELEASED.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public SittingBooking updateBookingStatus(Long bookingId, String status) {
+        if (bookingId == null) {
+            throw new IllegalArgumentException("Booking ID is required");
+        }
+        if (status == null || status.trim().isEmpty()) {
+            throw new IllegalArgumentException("Status cannot be blank");
+        }
+
+        SittingBooking booking = sittingBookingDAO.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking with ID " + bookingId + " not found"));
+
+        String normalizedStatus = status.trim().toUpperCase();
+        sittingBookingDAO.updateStatus(bookingId, normalizedStatus);
+        booking.setStatus(normalizedStatus);
+
+        if ("COMPLETED".equalsIgnoreCase(normalizedStatus)) {
+            paymentDAO.updateStatusByBookingId(bookingId, "RELEASED");
+            booking.setPaymentStatus("RELEASED");
+        } else if ("CANCELLED".equalsIgnoreCase(normalizedStatus)) {
+            paymentDAO.updateStatusByBookingId(bookingId, "REFUNDED");
+            booking.setPaymentStatus("REFUNDED");
+        }
+
+        return sittingBookingDAO.findById(bookingId).orElse(booking);
+    }
 }
 

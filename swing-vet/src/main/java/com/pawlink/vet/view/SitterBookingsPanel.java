@@ -19,6 +19,7 @@ import java.util.List;
 /**
  * Panel for managing Sitter Bookings, assigned jobs, and tracking check-ins.
  * Adaptive: Displays sitter's assigned jobs or owner's booked sitters based on logged-in role.
+ * Includes Cancel Booking and End Session (Release Payment) workflows for Pet Owners.
  */
 public class SitterBookingsPanel extends BasePanel {
 
@@ -27,8 +28,12 @@ public class SitterBookingsPanel extends BasePanel {
     private final JLabel statusCountLabel;
     private List<SittingBookingDTO> bookingList = new ArrayList<>();
 
+    // Owner Actions
+    private JButton cancelBtn;
+    private JButton endSessionBtn;
+
     public SitterBookingsPanel() {
-        super("📋 Sitter Bookings & Jobs", "View scheduled sitting appointments, monitor escrow status, and log pet care updates.");
+        super(getAdaptiveTitle(), getAdaptiveSubtitle());
 
         String[] columns = {"Booking #", "Pet Name", "Owner", "Sitter", "Start Time", "End Time", "Status", "Total Fee", "Escrow Status"};
         this.tableModel = new BaseTableModel<>(columns) {
@@ -42,7 +47,7 @@ public class SitterBookingsPanel extends BasePanel {
                     case 4 -> b.getFormattedStart();
                     case 5 -> b.getFormattedEnd();
                     case 6 -> b.getStatus();
-                    case 7 -> "$" + (b.getTotalAmount() != null ? b.getTotalAmount() : "0.00");
+                    case 7 -> "₹" + (b.getTotalAmount() != null ? b.getTotalAmount() : "0.00");
                     case 8 -> b.getPaymentStatus() != null ? b.getPaymentStatus() : "HELD";
                     default -> "";
                 };
@@ -54,6 +59,22 @@ public class SitterBookingsPanel extends BasePanel {
 
         setupUI();
         loadBookings();
+    }
+
+    private static String getAdaptiveTitle() {
+        Session session = Session.getInstance();
+        if (session.isOwner()) {
+            return "🐾 My Booked Pet Sitters";
+        }
+        return "📋 Sitter Bookings & Jobs";
+    }
+
+    private static String getAdaptiveSubtitle() {
+        Session session = Session.getInstance();
+        if (session.isOwner()) {
+            return "Track active and past sitting sessions, inspect care updates, cancel bookings or end session to release payment.";
+        }
+        return "View scheduled sitting appointments, monitor escrow status, and log pet care updates.";
     }
 
     private void setupUI() {
@@ -79,9 +100,11 @@ public class SitterBookingsPanel extends BasePanel {
                 } else if ("COMPLETED".equalsIgnoreCase(val)) {
                     label.setText("★ Completed");
                     label.setForeground(new Color(59, 130, 246));
+                    label.setFont(label.getFont().deriveFont(Font.PLAIN));
                 } else if ("CANCELLED".equalsIgnoreCase(val)) {
                     label.setText("✗ Cancelled");
                     label.setForeground(new Color(239, 68, 68));
+                    label.setFont(label.getFont().deriveFont(Font.PLAIN));
                 }
                 return label;
             }
@@ -99,10 +122,20 @@ public class SitterBookingsPanel extends BasePanel {
                     label.setText("🔒 Escrow HELD");
                     label.setForeground(new Color(217, 119, 6)); // Amber
                 } else if ("RELEASED".equalsIgnoreCase(val)) {
-                    label.setText("✓ Escrow Paid");
+                    label.setText("✓ Escrow Released");
                     label.setForeground(new Color(16, 185, 129));
+                } else if ("REFUNDED".equalsIgnoreCase(val)) {
+                    label.setText("↩ Refunded");
+                    label.setForeground(new Color(100, 116, 139));
                 }
                 return label;
+            }
+        });
+
+        // Selection Listener to update button states
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                updateActionButtonsState();
             }
         });
 
@@ -125,13 +158,16 @@ public class SitterBookingsPanel extends BasePanel {
         refreshBtn.addActionListener(e -> loadBookings());
         accessoryPanel.add(refreshBtn);
 
-        JButton checkinBtn = new JButton("📸 Log Check-In");
-        checkinBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        checkinBtn.setBackground(new Color(16, 185, 129)); // Green
-        checkinBtn.setForeground(Color.WHITE);
-        checkinBtn.setFocusable(false);
-        checkinBtn.addActionListener(e -> openAddCheckinDialog());
-        accessoryPanel.add(checkinBtn);
+        Session session = Session.getInstance();
+        if (session.isSitter()) {
+            JButton checkinBtn = new JButton("📸 Log Check-In");
+            checkinBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            checkinBtn.setBackground(new Color(16, 185, 129)); // Green
+            checkinBtn.setForeground(Color.WHITE);
+            checkinBtn.setFocusable(false);
+            checkinBtn.addActionListener(e -> openAddCheckinDialog());
+            accessoryPanel.add(checkinBtn);
+        }
 
         JButton timelineBtn = new JButton("📋 View Timeline");
         timelineBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -140,6 +176,26 @@ public class SitterBookingsPanel extends BasePanel {
         timelineBtn.setFocusable(false);
         timelineBtn.addActionListener(e -> openTimelineDialog());
         accessoryPanel.add(timelineBtn);
+
+        if (session.isOwner()) {
+            cancelBtn = new JButton("❌ Cancel Booking");
+            cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            cancelBtn.setBackground(new Color(220, 38, 38)); // Red
+            cancelBtn.setForeground(Color.WHITE);
+            cancelBtn.setFocusable(false);
+            cancelBtn.setEnabled(false);
+            cancelBtn.addActionListener(e -> handleCancelBooking());
+            accessoryPanel.add(cancelBtn);
+
+            endSessionBtn = new JButton("🏁 End Session & Release Payment");
+            endSessionBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            endSessionBtn.setBackground(new Color(22, 163, 74)); // Green
+            endSessionBtn.setForeground(Color.WHITE);
+            endSessionBtn.setFocusable(false);
+            endSessionBtn.setEnabled(false);
+            endSessionBtn.addActionListener(e -> handleEndSession());
+            accessoryPanel.add(endSessionBtn);
+        }
 
         setHeaderAccessory(accessoryPanel);
 
@@ -159,7 +215,10 @@ public class SitterBookingsPanel extends BasePanel {
         statusCountLabel.setForeground(new Color(100, 116, 139));
         bottomBar.add(statusCountLabel, BorderLayout.WEST);
 
-        JLabel tip = new JLabel("💡 Tip: Select a booking and click 'Log Check-In' to update pet owners in real time.");
+        String tipText = session.isOwner()
+                ? "💡 Tip: When your pet sitting finishes, click 'End Session & Release Payment' to transfer escrow to the sitter."
+                : "💡 Tip: Select a booking and click 'Log Check-In' to update pet owners in real time.";
+        JLabel tip = new JLabel(tipText);
         tip.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         tip.setForeground(new Color(148, 163, 184));
         bottomBar.add(tip, BorderLayout.EAST);
@@ -167,6 +226,21 @@ public class SitterBookingsPanel extends BasePanel {
         centerPanel.add(bottomBar, BorderLayout.SOUTH);
 
         setContent(centerPanel);
+    }
+
+    private void updateActionButtonsState() {
+        if (cancelBtn == null && endSessionBtn == null) return;
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            if (cancelBtn != null) cancelBtn.setEnabled(false);
+            if (endSessionBtn != null) endSessionBtn.setEnabled(false);
+            return;
+        }
+
+        SittingBookingDTO booking = tableModel.getItem(row);
+        boolean isConfirmed = booking != null && "CONFIRMED".equalsIgnoreCase(booking.getStatus());
+        if (cancelBtn != null) cancelBtn.setEnabled(isConfirmed);
+        if (endSessionBtn != null) endSessionBtn.setEnabled(isConfirmed);
     }
 
     public void loadBookings() {
@@ -195,8 +269,85 @@ public class SitterBookingsPanel extends BasePanel {
                     bookingList = get();
                     tableModel.setItems(bookingList);
                     statusCountLabel.setText("Found " + bookingList.size() + " booking(s).");
+                    updateActionButtonsState();
                 } catch (Exception ex) {
                     showError("Failed to fetch bookings: " + ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void handleCancelBooking() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            Dialogs.showWarning(this, "Please select a booking to cancel.");
+            return;
+        }
+
+        SittingBookingDTO booking = tableModel.getItem(row);
+        if (booking == null) return;
+
+        boolean confirm = Dialogs.showConfirm(this,
+                "Are you sure you want to cancel Booking #" + booking.getId() + " for " + booking.getPetName() + "?\n" +
+                "Any funds currently held in escrow will be refunded.",
+                "Cancel Sitter Booking");
+        if (!confirm) return;
+
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                ApiClient.getInstance().post("/api/sitter-bookings/" + booking.getId() + "/cancel", null, SittingBookingDTO.class);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    Dialogs.showSuccess(SitterBookingsPanel.this, "Booking #" + booking.getId() + " has been cancelled and escrow refunded.");
+                    loadBookings();
+                } catch (Exception ex) {
+                    showError("Failed to cancel booking: " + ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void handleEndSession() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            Dialogs.showWarning(this, "Please select a booking to end session.");
+            return;
+        }
+
+        SittingBookingDTO booking = tableModel.getItem(row);
+        if (booking == null) return;
+
+        boolean confirm = Dialogs.showConfirm(this,
+                "End sitting session for " + booking.getPetName() + "?\n" +
+                "This will mark the booking as COMPLETED and release payment (₹" +
+                (booking.getTotalAmount() != null ? booking.getTotalAmount() : "0.00") + ") from escrow to " +
+                (booking.getSitterName() != null ? booking.getSitterName() : "the sitter") + ".",
+                "End Session & Release Payment");
+        if (!confirm) return;
+
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                ApiClient.getInstance().post("/api/sitter-bookings/" + booking.getId() + "/complete", null, SittingBookingDTO.class);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    Dialogs.showSuccess(SitterBookingsPanel.this, "Session completed! Escrow payment has been released.");
+                    loadBookings();
+                } catch (Exception ex) {
+                    showError("Failed to complete session: " + ex.getMessage());
                 }
             }
         };

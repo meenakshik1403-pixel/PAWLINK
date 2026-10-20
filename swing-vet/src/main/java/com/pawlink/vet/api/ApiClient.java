@@ -5,14 +5,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Centralized REST API Client using Java 11+ HttpClient and Jackson ObjectMapper.
@@ -85,10 +90,15 @@ public class ApiClient {
                 .timeout(Duration.ofSeconds(15))
                 .header("Accept", "application/json");
 
-        // Forward session user ID to REST backend
+        // Forward session user ID and role to REST backend
         Session session = Session.getInstance();
-        if (session.isLoggedIn() && session.getUserId() != null) {
-            builder.header("X-User-Id", String.valueOf(session.getUserId()));
+        if (session.isLoggedIn()) {
+            if (session.getUserId() != null) {
+                builder.header("X-User-Id", String.valueOf(session.getUserId()));
+            }
+            if (session.getRole() != null) {
+                builder.header("X-User-Role", session.getRole());
+            }
         }
 
         return builder;
@@ -156,6 +166,52 @@ public class ApiClient {
             return execute(request, responseClass);
         } catch (IOException e) {
             throw new ApiException(400, "Failed to serialize request payload: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Executes HTTP POST with multipart/form-data for document uploads.
+     */
+    public <T> T postMultipart(String endpoint, Map<String, String> fields, Map<String, File> files, Class<T> responseClass) {
+        try {
+            String boundary = "----PawLinkBoundary" + System.currentTimeMillis();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            // Append textual fields
+            if (fields != null) {
+                for (Map.Entry<String, String> entry : fields.entrySet()) {
+                    if (entry.getValue() == null) continue;
+                    out.write(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
+                    out.write(("Content-Disposition: form-data; name=\"" + entry.getKey() + "\"\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+                    out.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
+                    out.write("\r\n".getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
+            // Append files
+            if (files != null) {
+                for (Map.Entry<String, File> entry : files.entrySet()) {
+                    File file = entry.getValue();
+                    if (file == null || !file.exists()) continue;
+                    out.write(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
+                    out.write(("Content-Disposition: form-data; name=\"" + entry.getKey() + "\"; filename=\"" + file.getName() + "\"\r\n").getBytes(StandardCharsets.UTF_8));
+                    out.write("Content-Type: application/pdf\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+                    Files.copy(file.toPath(), out);
+                    out.write("\r\n".getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
+            out.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+            byte[] bodyBytes = out.toByteArray();
+
+            HttpRequest request = createRequestBuilder(endpoint)
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes))
+                    .build();
+
+            return execute(request, responseClass);
+        } catch (IOException e) {
+            throw new ApiException(400, "Failed to encode multipart request: " + e.getMessage());
         }
     }
 

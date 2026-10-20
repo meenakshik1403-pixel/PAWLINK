@@ -125,4 +125,15 @@ public class UserDAO {
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
         return count != null && count > 0;
     }
+
+    /**
+     * Updates the password hash for a specific user email (e.g., admin sync from .env).
+     *
+     * @param email        user email
+     * @param passwordHash new hashed password
+     */
+    public void updatePassword(String email, String passwordHash) {
+        final String sql = "UPDATE users SET password_hash = ? WHERE email = ?";
+        jdbcTemplate.update(sql, passwordHash, email);
+    }
 }

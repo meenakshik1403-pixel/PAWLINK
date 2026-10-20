@@ -30,9 +30,15 @@ public class AddPetDialog extends JDialog {
     private final JButton cancelButton;
 
     private boolean petCreated = false;
+    private final Runnable onSuccess;
 
     public AddPetDialog(Frame parent) {
+        this(parent, null);
+    }
+
+    public AddPetDialog(Frame parent, Runnable onSuccess) {
         super(parent, "Register New Pet", true);
+        this.onSuccess = onSuccess;
         setSize(440, 380);
         setLocationRelativeTo(parent);
         setResizable(false);
@@ -48,104 +54,97 @@ public class AddPetDialog extends JDialog {
 
         JLabel title = new JLabel("🐾 Add a Pet");
         title.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        title.setForeground(new Color(30, 41, 59));
+        title.setForeground(new Color(15, 23, 42));
         headerPanel.add(title);
 
-        JLabel sub = new JLabel("Enter your pet's details to access species care guidelines.");
+        JLabel sub = new JLabel("Register a pet to schedule checkups and vaccines");
         sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         sub.setForeground(new Color(100, 116, 139));
         headerPanel.add(sub);
-
         root.add(headerPanel, BorderLayout.NORTH);
 
-        // Form Fields
+        // Form fields
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(6, 4, 6, 4);
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.HORIZONTAL;
+        g.insets = new Insets(6, 4, 6, 4);
 
-        // 1. Pet Name
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
-        JLabel nameLabel = new JLabel("Pet Name *:");
+        g.gridx = 0; g.gridy = 0; g.weightx = 0.35;
+        JLabel nameLabel = new JLabel("Pet Name:");
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        form.add(nameLabel, gbc);
+        form.add(nameLabel, g);
 
-        gbc.gridx = 1; gbc.weightx = 0.7;
+        g.gridx = 1; g.weightx = 0.65;
         nameField = new JTextField(15);
-        nameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        form.add(nameField, gbc);
+        form.add(nameField, g);
 
-        // 2. Species Dropdown
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
-        JLabel speciesLabel = new JLabel("Species *:");
+        g.gridx = 0; g.gridy = 1;
+        JLabel speciesLabel = new JLabel("Species:");
         speciesLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        form.add(speciesLabel, gbc);
+        form.add(speciesLabel, g);
 
-        gbc.gridx = 1; gbc.weightx = 0.7;
-        String[] speciesOptions = {"Dog", "Cat", "Bird", "Reptile"};
-        speciesCombo = new JComboBox<>(speciesOptions);
-        speciesCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        form.add(speciesCombo, gbc);
+        g.gridx = 1;
+        speciesCombo = new JComboBox<>(new String[]{"Dog", "Cat", "Bird", "Rabbit", "Other"});
+        form.add(speciesCombo, g);
 
-        // 3. Date of Birth
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
-        JLabel dobLabel = new JLabel("DOB (YYYY-MM-DD) *:");
+        g.gridx = 0; g.gridy = 2;
+        JLabel dobLabel = new JLabel("Date of Birth:");
         dobLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        form.add(dobLabel, gbc);
+        form.add(dobLabel, g);
 
-        gbc.gridx = 1; gbc.weightx = 0.7;
-        dobField = new JTextField(LocalDate.now().minusYears(1).toString(), 15);
-        dobField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        form.add(dobField, gbc);
+        g.gridx = 1;
+        dobField = new JTextField("2022-01-01", 15);
+        dobField.setToolTipText("Format: YYYY-MM-DD");
+        form.add(dobField, g);
 
-        // 4. Inline Error Label
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        g.gridx = 0; g.gridy = 3; g.gridwidth = 2;
         errorLabel = new JLabel(" ");
-        errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        errorLabel.setForeground(new Color(220, 38, 38)); // Red
-        form.add(errorLabel, gbc);
+        errorLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        errorLabel.setForeground(new Color(220, 38, 38));
+        form.add(errorLabel, g);
 
         root.add(form, BorderLayout.CENTER);
 
-        // Bottom Actions
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttonPanel.setOpaque(false);
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        btnPanel.setOpaque(false);
 
         cancelButton = new JButton("Cancel");
-        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         cancelButton.addActionListener(e -> dispose());
-        buttonPanel.add(cancelButton);
+        btnPanel.add(cancelButton);
 
         submitButton = new JButton("Register Pet");
-        submitButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        submitButton.setBackground(new Color(37, 99, 235)); // Blue accent
+        submitButton.setBackground(new Color(79, 70, 229));
         submitButton.setForeground(Color.WHITE);
-        submitButton.setFocusPainted(false);
+        submitButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        submitButton.setFocusable(false);
         submitButton.addActionListener(e -> handleSubmit());
-        buttonPanel.add(submitButton);
+        btnPanel.add(submitButton);
 
-        root.add(buttonPanel, BorderLayout.SOUTH);
-
+        root.add(btnPanel, BorderLayout.SOUTH);
         add(root);
     }
 
     private void handleSubmit() {
-        errorLabel.setText(" ");
         String name = nameField.getText().trim();
         String species = (String) speciesCombo.getSelectedItem();
         String dobStr = dobField.getText().trim();
 
         if (name.isEmpty()) {
-            errorLabel.setText("Pet name cannot be blank.");
+            errorLabel.setText("Validation error: Pet name cannot be blank.");
             return;
         }
 
         LocalDate dob;
         try {
             dob = LocalDate.parse(dobStr);
-        } catch (DateTimeParseException e) {
-            errorLabel.setText("Invalid date format. Use YYYY-MM-DD (e.g., 2022-05-15).");
+            if (dob.isAfter(LocalDate.now())) {
+                errorLabel.setText("Validation error: Date of birth cannot be in the future.");
+                return;
+            }
+        } catch (DateTimeParseException ex) {
+            errorLabel.setText("Format error: DOB must be in YYYY-MM-DD format.");
             return;
         }
 
@@ -178,6 +177,9 @@ public class AddPetDialog extends JDialog {
                     PetDTO created = get();
                     petCreated = true;
                     Dialogs.showSuccess(AddPetDialog.this, "Successfully registered " + created.getName() + " (" + created.getSpecies() + ")!");
+                    if (onSuccess != null) {
+                        onSuccess.run();
+                    }
                     dispose();
                 } catch (Exception ex) {
                     String msg = ex.getMessage();

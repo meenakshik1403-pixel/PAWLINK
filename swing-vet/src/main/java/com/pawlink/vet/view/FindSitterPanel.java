@@ -43,7 +43,7 @@ public class FindSitterPanel extends BasePanel {
                     case 1 -> sitter.getName();
                     case 2 -> sitter.getEmail();
                     case 3 -> sitter.getPhone() != null ? sitter.getPhone() : "-";
-                    case 4 -> "$" + (sitter.getHourlyRate() != null ? sitter.getHourlyRate() : "0.00") + " / hr";
+                    case 4 -> "₹" + (sitter.getHourlyRate() != null ? sitter.getHourlyRate() : "0.00") + " / hr";
                     case 5 -> sitter.isVerified() ? "VERIFIED" : "PENDING";
                     default -> "";
                 };
@@ -180,7 +180,10 @@ public class FindSitterPanel extends BasePanel {
         long verifiedCount = 0;
 
         for (SitterDTO s : allSitters) {
-            if (s.isVerified()) verifiedCount++;
+            if (!s.isVerified()) {
+                continue; // Do not show unverified sitters
+            }
+            verifiedCount++;
             if (query.isEmpty() ||
                     s.getName().toLowerCase().contains(query) ||
                     s.getEmail().toLowerCase().contains(query)) {

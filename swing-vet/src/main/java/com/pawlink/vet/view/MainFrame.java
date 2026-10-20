@@ -185,16 +185,10 @@ public class MainFrame extends JFrame {
      */
     private void setupVetTabs() {
         registerTab("📊 Dashboard", new DashboardPanel());
-
-        registerTab("🐕 Patients / Pets", new PetsPanel());
-
-        registerTab("📋 Medical & Vaccines", new RecordsPanel());
-
         registerTab("📅 Appointments", new AppointmentsPanel());
-
+        registerTab("📋 Medical & Vaccines", new RecordsPanel());
+        registerTab("🐕 Patients / Pets", new PetsPanel());
         registerTab("🔔 Reminders", new RemindersPanel());
-
-        registerTab("📈 Analytics", new StatsPanel());
     }
 
     /**
@@ -208,11 +202,11 @@ public class MainFrame extends JFrame {
     private void setupOwnerTabs() {
         registerTab("🐶 My Pets", new OwnerPetsPanel());
 
-        registerTab("🏥 Book Appointment", new AppointmentsPanel());
+        registerTab("🏥 Vet Appointments", new AppointmentsPanel());
 
         registerTab("🏡 Find Pet Sitter", new FindSitterPanel());
 
-        registerTab("⏰ Alerts & Reminders", new RemindersPanel());
+        registerTab("🐾 Booked Pet Sitters", new SitterBookingsPanel());
 
         registerTab("💳 Payment History", new OwnerPaymentsPanel());
     }
@@ -233,55 +227,14 @@ public class MainFrame extends JFrame {
 
     /**
      * ADMIN TABS:
-     * - Sitter Approvals (P8)
-     * - Platform Analytics (P8)
-     * - User Directory (P1)
+     * - Sitter Approvals
+     * - Vet Approvals
+     * - Platform Statistics
      */
     private void setupAdminTabs() {
         registerTab("✅ Sitter Approvals", new AdminSittersPanel());
-
+        registerTab("🩺 Vet Approvals", new AdminVetsPanel());
         registerTab("📊 Platform Statistics", new StatsPanel());
-
-        registerTab("👥 User Directory", createDirectoryPanel());
-    }
-
-    /**
-     * User Directory panel for Admin inspection (P1 Auth/Core).
-     */
-    private JPanel createDirectoryPanel() {
-        BasePanel panel = new BasePanel("Registered Veterinarians Directory", "Live data queried via GET /api/vets") {};
-        
-        JButton refreshBtn = new JButton("Load Veterinarians");
-        refreshBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        refreshBtn.addActionListener(e -> {
-            try {
-                List<UserDTO> vets = ApiClient.getInstance().getList("/api/vets", UserDTO.class);
-                StringBuilder sb = new StringBuilder("Registered Veterinarians (" + vets.size() + " found):\n\n");
-                for (UserDTO v : vets) {
-                    sb.append("• ID: ").append(v.getId())
-                      .append(" | ").append(v.getName())
-                      .append(" | Email: ").append(v.getEmail())
-                      .append(" | Phone: ").append(v.getPhone() != null ? v.getPhone() : "N/A")
-                      .append(" [").append(v.getRole()).append("]\n");
-                }
-                JTextArea area = new JTextArea(sb.toString());
-                area.setEditable(false);
-                area.setFont(new Font("Consolas", Font.PLAIN, 13));
-                area.setBorder(new EmptyBorder(10, 10, 10, 10));
-                panel.setContent(new JScrollPane(area));
-            } catch (Exception ex) {
-                panel.showError("Failed to fetch veterinarians: " + ex.getMessage());
-            }
-        });
-
-        panel.setHeaderAccessory(refreshBtn);
-
-        JLabel initialLbl = new JLabel("Click 'Load Veterinarians' above to fetch all registered vets from the live REST API.");
-        initialLbl.setFont(new Font("Segoe UI", Font.ITALIC, 13));
-        initialLbl.setForeground(new Color(100, 116, 139));
-        panel.setContent(initialLbl);
-
-        return panel;
     }
 
     /**

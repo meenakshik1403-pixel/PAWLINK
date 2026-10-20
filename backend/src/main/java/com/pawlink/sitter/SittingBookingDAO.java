@@ -234,4 +234,12 @@ public class SittingBookingDAO {
                 sitterId, Timestamp.valueOf(end), Timestamp.valueOf(start));
         return count != null && count > 0;
     }
+
+    /**
+     * Updates booking status ('CONFIRMED', 'CANCELLED', 'COMPLETED').
+     */
+    public boolean updateStatus(Long bookingId, String status) {
+        String sql = "UPDATE sitter_bookings SET status = ? WHERE id = ?";
+        return jdbcTemplate.update(sql, status, bookingId) > 0;
+    }
 }

@@ -62,6 +62,13 @@ public class SitterDAO {
     }
 
     /**
+     * Alias for getSitters() to fetch all sitters with verification status.
+     */
+    public List<Sitter> getAllSittersWithStatus() {
+        return getSitters();
+    }
+
+    /**
      * Finds a specific sitter by user ID.
      */
     public Optional<Sitter> findById(Long sitterId) {

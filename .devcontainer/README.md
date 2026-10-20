@@ -1,6 +1,6 @@
 # PawLink DevContainer Guide
 
-This directory configures a fully isolated, cross-platform development container for PawLink. It allows developers and AI tools (Claude Code, GitHub Copilot, Cursor, Antigravity, Aider) to build, test, and run the Java backend, web portal, and Swing client without needing any local Java or Maven installation on the host machine.
+This directory configures a fully isolated, cross-platform development container for PawLink. It allows developers and AI tools (Claude Code, GitHub Copilot, Cursor, Antigravity, Aider) to build, test, and run the Java backend and Swing desktop client without needing any local Java or Maven installation on the host machine.
 
 ---
 
@@ -27,7 +27,6 @@ This directory configures a fully isolated, cross-platform development container
 | Service | Port | Description | LAN URL |
 | :--- | :--- | :--- | :--- |
 | **Backend REST API** | `8080` | Spring Boot API | `http://<HOST_IP>:8080/api/auth/...` |
-| **Web Portal** | `8081` | Spring Boot Web Portal | `http://<HOST_IP>:8081` |
 | **Swing Desktop GUI** | `6080` | Browser-based noVNC UI | `http://<HOST_IP>:6080` |
 | **VNC Server** | `5901` | Optional native VNC | `vnc://<HOST_IP>:5901` |
 
@@ -109,13 +108,7 @@ Run these commands in the DevContainer integrated terminal:
 ```
 *API will be available at `http://localhost:8080` (or `http://<LAN_IP>:8080`).*
 
-### 2. Run Web Portal
-```bash
-./.devcontainer/scripts/run-web-portal.sh
-```
-*Web Portal will be available at `http://localhost:8081` (or `http://<LAN_IP>:8081`).*
-
-### 3. Run Swing Desktop Application
+### 2. Run Swing Desktop Application
 ```bash
 ./.devcontainer/scripts/run-swing.sh
 ```

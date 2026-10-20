@@ -176,18 +176,88 @@ public class AppointmentDAO {
      * @return list of appointments ordered by start_time ASC
      */
     public List<Appointment> findByOwnerId(Long ownerId) {
-        final String sql = "SELECT a.id, a.vet_id, u_vet.name AS vet_name, " +
-                "       a.pet_id, p.name AS pet_name, " +
-                "       a.owner_id, u_owner.name AS owner_name, " +
-                "       a.start_time, a.end_time, a.status, a.created_at " +
-                "FROM appointments a " +
-                "LEFT JOIN users u_vet ON a.vet_id = u_vet.id " +
-                "LEFT JOIN pets p ON a.pet_id = p.id " +
-                "LEFT JOIN users u_owner ON a.owner_id = u_owner.id " +
-                "WHERE a.owner_id = ? " +
-                "ORDER BY a.start_time ASC";
+        return findByOwnerIdAndDate(ownerId, null);
+    }
 
-        return jdbcTemplate.query(sql, appointmentRowMapper, ownerId);
+    /**
+     * Finds appointments booked by a specific pet owner, optionally filtered by date.
+     *
+     * @param ownerId owner user ID
+     * @param date    optional date filter
+     * @return list of appointments ordered by start_time ASC
+     */
+    public List<Appointment> findByOwnerIdAndDate(Long ownerId, LocalDate date) {
+        if (date != null) {
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+
+            final String sql = "SELECT a.id, a.vet_id, u_vet.name AS vet_name, " +
+                    "       a.pet_id, p.name AS pet_name, " +
+                    "       a.owner_id, u_owner.name AS owner_name, " +
+                    "       a.start_time, a.end_time, a.status, a.created_at " +
+                    "FROM appointments a " +
+                    "LEFT JOIN users u_vet ON a.vet_id = u_vet.id " +
+                    "LEFT JOIN pets p ON a.pet_id = p.id " +
+                    "LEFT JOIN users u_owner ON a.owner_id = u_owner.id " +
+                    "WHERE a.owner_id = ? " +
+                    "  AND a.start_time >= ? " +
+                    "  AND a.start_time < ? " +
+                    "ORDER BY a.start_time ASC";
+
+            return jdbcTemplate.query(sql, appointmentRowMapper, ownerId, Timestamp.valueOf(dayStart), Timestamp.valueOf(dayEnd));
+        } else {
+            final String sql = "SELECT a.id, a.vet_id, u_vet.name AS vet_name, " +
+                    "       a.pet_id, p.name AS pet_name, " +
+                    "       a.owner_id, u_owner.name AS owner_name, " +
+                    "       a.start_time, a.end_time, a.status, a.created_at " +
+                    "FROM appointments a " +
+                    "LEFT JOIN users u_vet ON a.vet_id = u_vet.id " +
+                    "LEFT JOIN pets p ON a.pet_id = p.id " +
+                    "LEFT JOIN users u_owner ON a.owner_id = u_owner.id " +
+                    "WHERE a.owner_id = ? " +
+                    "ORDER BY a.start_time ASC";
+
+            return jdbcTemplate.query(sql, appointmentRowMapper, ownerId);
+        }
+    }
+
+    /**
+     * Finds all platform appointments, optionally filtered by date.
+     *
+     * @param date optional date filter
+     * @return list of appointments ordered by start_time ASC
+     */
+    public List<Appointment> findAll(LocalDate date) {
+        if (date != null) {
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+
+            final String sql = "SELECT a.id, a.vet_id, u_vet.name AS vet_name, " +
+                    "       a.pet_id, p.name AS pet_name, " +
+                    "       a.owner_id, u_owner.name AS owner_name, " +
+                    "       a.start_time, a.end_time, a.status, a.created_at " +
+                    "FROM appointments a " +
+                    "LEFT JOIN users u_vet ON a.vet_id = u_vet.id " +
+                    "LEFT JOIN pets p ON a.pet_id = p.id " +
+                    "LEFT JOIN users u_owner ON a.owner_id = u_owner.id " +
+                    "WHERE a.start_time >= ? " +
+                    "  AND a.start_time < ? " +
+                    "ORDER BY a.start_time ASC";
+
+            return jdbcTemplate.query(sql, appointmentRowMapper, Timestamp.valueOf(dayStart), Timestamp.valueOf(dayEnd));
+        } else {
+            final String sql = "SELECT a.id, a.vet_id, u_vet.name AS vet_name, " +
+                    "       a.pet_id, p.name AS pet_name, " +
+                    "       a.owner_id, u_owner.name AS owner_name, " +
+                    "       a.start_time, a.end_time, a.status, a.created_at " +
+                    "FROM appointments a " +
+                    "LEFT JOIN users u_vet ON a.vet_id = u_vet.id " +
+                    "LEFT JOIN pets p ON a.pet_id = p.id " +
+                    "LEFT JOIN users u_owner ON a.owner_id = u_owner.id " +
+                    "ORDER BY a.start_time ASC";
+
+            return jdbcTemplate.query(sql, appointmentRowMapper);
+        }
     }
 
     /**

@@ -17,6 +17,7 @@ This document specifies the end-to-end Quality Assurance test suite and validati
 | TC ID | Vertical / Domain | Endpoint | HTTP Method | Sample Request Payload / Parameters | Expected Status Code | Validation Criteria |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **TC-01** | User Auth | `/api/auth/register` | `POST` | `{"name":"John Owner","email":"owner.john@pawlink.com","password":"password123","phone":"555-0401","role":"OWNER"}` | `201 Created` | Returns `{ id, name, email, role: "OWNER" }`. User persisted with BCrypt password hash. |
+| **TC-01b** | User Auth | `/api/auth/register` | `POST` | `{"name":"Attempted Admin","email":"admin.hack@pawlink.com","password":"password123","phone":"555-0301","role":"ADMIN"}` | `400 Bad Request` | Admin registration forbidden. Admin credentials must be configured via `.env`. |
 | **TC-02** | User Auth | `/api/auth/login` | `POST` | `{"email":"owner.john@pawlink.com","password":"password123"}` | `200 OK` | Returns User DTO. Validates BCrypt hash comparison; returns 401 Unauthorized on bad credentials. |
 | **TC-03** | Pet Management | `/api/pets` | `POST` | `{"ownerId":1,"name":"Buddy","species":"Dog","dob":"2021-03-15"}` | `201 Created` | Returns pet with polymorphic `careGuidelines: "Daily exercise, annual rabies vaccine, dental checkups."` |
 | **TC-04** | Pet Management | `/api/pets` | `GET` | Query Param: `?ownerId=1` | `200 OK` | Returns JSON Array of pets owned by ID 1. Validates ownership isolation. |

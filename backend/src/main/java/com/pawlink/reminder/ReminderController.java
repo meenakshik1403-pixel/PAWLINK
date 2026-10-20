@@ -4,6 +4,8 @@ import com.pawlink.common.exception.ResourceNotFoundException;
 import com.pawlink.reminder.dto.ReminderRequest;
 import com.pawlink.reminder.dto.ReminderResponse;
 import com.pawlink.reminder.dto.ReminderRunResponse;
+import com.pawlink.user.User;
+import com.pawlink.user.UserDAO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +15,11 @@ import java.util.stream.Collectors;
 
 /**
  * REST Controller exposing Reminder and Observer Engine endpoints:
- * - GET /api/reminders?ownerId={id} or ?due=true
+ * - GET  /api/reminders?ownerId={id} or ?petId={id} or ?due=true
+ * - GET  /api/reminders/pet/{petId}
  * - POST /api/reminders/run (manually triggers checkDueReminders)
  * - POST /api/reminders (creates new reminder)
- * - GET /api/reminders/{id}
+ * - GET  /api/reminders/{id}
  */
 @RestController
 @RequestMapping("/api/reminders")
@@ -24,32 +27,45 @@ public class ReminderController {
 
     private final ReminderDAO reminderDAO;
     private final ReminderScheduler reminderScheduler;
+    private final UserDAO userDAO;
 
-    public ReminderController(ReminderDAO reminderDAO, ReminderScheduler reminderScheduler) {
+    public ReminderController(ReminderDAO reminderDAO, ReminderScheduler reminderScheduler, UserDAO userDAO) {
         this.reminderDAO = reminderDAO;
         this.reminderScheduler = reminderScheduler;
+        this.userDAO = userDAO;
     }
 
     /**
      * GET /api/reminders:
      * - ?due=true -> returns all due & unsent reminders
+     * - ?petId={id} -> returns reminders for a specific pet
      * - ?ownerId={id} -> returns reminders for owner's pets
-     * - default / X-User-Id -> returns reminders for current user or all
+     * - default / X-User-Id -> returns reminders for current user or all clinic reminders
      */
     @GetMapping
     public ResponseEntity<List<ReminderResponse>> getReminders(
             @RequestParam(name = "due", required = false) Boolean due,
             @RequestParam(name = "ownerId", required = false) Long ownerId,
+            @RequestParam(name = "petId", required = false) Long petId,
             @RequestHeader(name = "X-User-Id", required = false) Long xUserId
     ) {
         List<Reminder> list;
 
         if (Boolean.TRUE.equals(due)) {
             list = reminderDAO.findDueReminders();
+        } else if (petId != null) {
+            list = reminderDAO.findByPetId(petId);
         } else if (ownerId != null) {
             list = reminderDAO.findByOwnerId(ownerId);
         } else if (xUserId != null) {
-            list = reminderDAO.findByOwnerId(xUserId);
+            boolean isOwner = userDAO.findById(xUserId)
+                    .map(u -> "OWNER".equalsIgnoreCase(u.getRole()))
+                    .orElse(false);
+            if (isOwner) {
+                list = reminderDAO.findByOwnerId(xUserId);
+            } else {
+                list = reminderDAO.findAll();
+            }
         } else {
             list = reminderDAO.findAll();
         }
@@ -58,6 +74,19 @@ public class ReminderController {
                 .map(ReminderResponse::from)
                 .collect(Collectors.toList());
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/reminders/pet/{petId}:
+     * Returns scheduled reminders for a specific pet.
+     */
+    @GetMapping("/pet/{petId}")
+    public ResponseEntity<List<ReminderResponse>> getRemindersByPetId(@PathVariable("petId") Long petId) {
+        List<Reminder> list = reminderDAO.findByPetId(petId);
+        List<ReminderResponse> response = list.stream()
+                .map(ReminderResponse::from)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 
@@ -111,4 +140,3 @@ public class ReminderController {
         return ResponseEntity.ok(ReminderResponse.from(r));
     }
 }
-

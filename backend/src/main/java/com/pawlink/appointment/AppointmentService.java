@@ -120,10 +120,24 @@ public class AppointmentService {
      * Retrieves appointments booked by an owner.
      */
     public List<Appointment> getAppointmentsByOwner(Long ownerId) {
+        return getAppointmentsByOwnerAndDate(ownerId, null);
+    }
+
+    /**
+     * Retrieves appointments booked by an owner, optionally filtered by date.
+     */
+    public List<Appointment> getAppointmentsByOwnerAndDate(Long ownerId, LocalDate date) {
         if (ownerId == null || ownerId <= 0) {
             throw new IllegalArgumentException("Valid Pet Owner ID is required.");
         }
-        return appointmentDAO.findByOwnerId(ownerId);
+        return appointmentDAO.findByOwnerIdAndDate(ownerId, date);
+    }
+
+    /**
+     * Retrieves all platform appointments, optionally filtered by date.
+     */
+    public List<Appointment> getAllAppointments(LocalDate date) {
+        return appointmentDAO.findAll(date);
     }
 
     /**

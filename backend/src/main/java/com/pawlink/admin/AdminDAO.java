@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Data Access Object for Admin Sitter verification and system analytics.
+ * Data Access Object for Admin Sitter and Vet verification and system analytics.
  * STRICT: Plain SQL with Spring JdbcTemplate. No JPA/Hibernate.
  */
 @Repository
@@ -21,11 +21,33 @@ public class AdminDAO {
     }
 
     /**
-     * Approves a registered sitter by toggling verified = TRUE.
+     * Approves a registered sitter by toggling verified = TRUE, and updates their hourly rate if provided.
      */
     public boolean approveSitter(Long sitterId) {
-        String sql = "UPDATE sitters SET verified = TRUE WHERE user_id = ?";
-        return jdbcTemplate.update(sql, sitterId) > 0;
+        return approveSitter(sitterId, null);
+    }
+
+    public boolean approveSitter(Long sitterId, java.math.BigDecimal hourlyRate) {
+        if (hourlyRate != null && hourlyRate.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            String sql = "UPDATE sitters SET verified = TRUE, hourly_rate = ? WHERE user_id = ?";
+            return jdbcTemplate.update(sql, hourlyRate, sitterId) > 0;
+        } else {
+            String sql = "UPDATE sitters SET verified = TRUE WHERE user_id = ?";
+            return jdbcTemplate.update(sql, sitterId) > 0;
+        }
+    }
+
+    /**
+     * Approves a registered veterinarian by toggling verified = TRUE in vets table.
+     */
+    public boolean approveVet(Long vetId) {
+        String countSql = "SELECT COUNT(*) FROM vets WHERE user_id = ?";
+        Integer count = jdbcTemplate.queryForObject(countSql, Integer.class, vetId);
+        if (count != null && count > 0) {
+            return jdbcTemplate.update("UPDATE vets SET verified = TRUE WHERE user_id = ?", vetId) > 0;
+        } else {
+            return jdbcTemplate.update("INSERT INTO vets (user_id, verified) VALUES (?, TRUE)", vetId) > 0;
+        }
     }
 
     /**
@@ -61,7 +83,7 @@ public class AdminDAO {
         });
         stats.setAppointmentsPerVet(apptsPerVet);
 
-        // 4. Bookings per Pet Sitter (Advanced Aggregation with JOIN & GROUP BY)
+        // 4. Bookings per Sitter (Advanced Aggregation with JOIN & GROUP BY)
         String sitterBookingSql = """
             SELECT u.name, COUNT(b.id) AS cnt
             FROM users u
@@ -76,14 +98,6 @@ public class AdminDAO {
         });
         stats.setBookingsPerSitter(bookingsPerSitter);
 
-        // 5. Total volume counts
-        Integer totalAppts = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM appointments", Integer.class);
-        stats.setTotalAppointments(totalAppts != null ? totalAppts : 0);
-
-        Integer totalBookings = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sitter_bookings", Integer.class);
-        stats.setTotalBookings(totalBookings != null ? totalBookings : 0);
-
         return stats;
     }
 }
-

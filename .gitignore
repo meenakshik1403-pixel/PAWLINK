@@ -31,3 +31,9 @@ application-local.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# User Uploaded Documents
+uploads/
+**/uploads/
+backend/uploads/
+*.pdf

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * REST Controller exposing Appointment endpoints:
  * - POST /api/appointments
- * - GET /api/appointments?vetId={id}&date={date} or ?ownerId={id}
+ * - GET  /api/appointments?vetId={id}&date={date} or ?ownerId={id}&date={date} or ?date={date}
  * - PATCH /api/appointments/{id}/status
  */
 @RestController
@@ -46,7 +46,7 @@ public class AppointmentController {
     }
 
     /**
-     * GET /api/appointments: Retrieves appointments by vetId and optional date, or by ownerId.
+     * GET /api/appointments: Retrieves appointments by vetId, ownerId, or date, or all appointments.
      */
     @GetMapping
     public ResponseEntity<List<AppointmentResponse>> getAppointments(
@@ -59,22 +59,29 @@ public class AppointmentController {
         if (dateParam != null && !dateParam.trim().isEmpty()) {
             if ("today".equalsIgnoreCase(dateParam.trim())) {
                 date = LocalDate.now();
+            } else if ("tomorrow".equalsIgnoreCase(dateParam.trim())) {
+                date = LocalDate.now().plusDays(1);
             } else {
-                date = LocalDate.parse(dateParam.trim());
+                try {
+                    date = LocalDate.parse(dateParam.trim());
+                } catch (Exception ignored) {
+                    // fall back to null date if unparseable
+                }
             }
         }
 
         List<Appointment> list;
 
         if (ownerId != null) {
-            list = appointmentService.getAppointmentsByOwner(ownerId);
+            list = appointmentService.getAppointmentsByOwnerAndDate(ownerId, date);
         } else if (vetId != null) {
             list = appointmentService.getAppointmentsByVetAndDate(vetId, date);
         } else if (xUserId != null) {
             // Fallback to checking owner bookings for the authenticated user
-            list = appointmentService.getAppointmentsByOwner(xUserId);
+            list = appointmentService.getAppointmentsByOwnerAndDate(xUserId, date);
         } else {
-            list = Collections.emptyList();
+            // Return all appointments (optionally filtered by date)
+            list = appointmentService.getAllAppointments(date);
         }
 
         List<AppointmentResponse> responses = list.stream()
@@ -100,7 +107,7 @@ public class AppointmentController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<AppointmentResponse> getAppointmentById(@PathVariable("id") Long id) {
-        Appointment a = appointmentService.getAppointmentById(id);
-        return ResponseEntity.ok(AppointmentResponse.from(a));
+        Appointment appt = appointmentService.getAppointmentById(id);
+        return ResponseEntity.ok(AppointmentResponse.from(appt));
     }
 }

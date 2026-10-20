@@ -1,179 +1,229 @@
-# PawLink — Pet Care Management System
-## Team Architecture & Person 1 (P1 - Auth & Core) Implementation
+# PawLink — Pet Care Management Platform
 
-**Course:** PBCST304 · Object Oriented Programming  
-**Branch:** `feature/P1-auth-core`  
-**Role:** Person 1 (Auth, Project Core Architecture, Swing Shell, Web Portal Gateway)
+PawLink is a comprehensive, enterprise-grade Pet Care Management Platform designed to streamline interactions between **Pet Owners**, **Veterinarians**, **Pet Sitters**, and **Platform Administrators**.
+
+Built using **Java 25 (JDK 25 LTS)**, **Spring Boot 3**, and a modern **Java Swing Desktop Client (FlatLaf)**, PawLink features pure SQL database interactions via **Spring `JdbcTemplate`** (**strictly zero JPA / Hibernate**), role-based workflows, secure credential verification, and complete financial transactions in Indian Rupees (`₹` INR).
 
 ---
 
-## 1. Project Overview & Architecture
+## 1. System Architecture
 
-PawLink is an 8-person multi-module pet care management system built with:
-- **Java 17 & Spring Boot 3**
-- **Spring JdbcTemplate** (Plain SQL with `RowMapper<T>`, **Strictly NO JPA / Hibernate**)
-- **PostgreSQL on Supabase** (Shared database pooler with HikariCP)
-- **Java Swing Desktop Application** (Modern Look & Feel with FlatLaf, role-adaptive shell)
-- **Web Portal Gateway** (Spring Boot + RestClient on port 8081 forwarding `X-User-Id` to backend)
-
-### Monorepo Structure
+PawLink is structured as a modular Maven multi-project repository:
 
 ```
-pawlink/
-├── pom.xml                                   # Root Maven parent reactor
+PAWLINK/
+├── pom.xml                                   # Root Maven parent reactor (JDK 25 LTS target)
+├── .env.example                              # Template for environment configuration & admin credentials
+├── scripts/                                  # Cross-platform execution scripts
+│   ├── run-backend.bat                       # Launch Spring Boot REST API (Windows)
+│   ├── run-backend.sh                        # Launch Spring Boot REST API (Linux / macOS)
+│   ├── run-swing-client.bat                  # Launch Swing GUI silently via javaw (Windows)
+│   ├── run-swing-debug.bat                   # Launch Swing GUI with console debug logging (Windows)
+│   ├── run-swing.sh                          # Launch Swing GUI (Linux / macOS / noVNC)
+│   └── supabase-cli-helper.sh                # Supabase database synchronization utility
 ├── db/
-│   ├── schema.sql                            # Core DDL: users + teammate vertical tables
-│   └── seed.sql                              # Pre-populated users with BCrypt hashes & test records
+│   ├── schema.sql                            # Complete PostgreSQL DDL schema definition
+│   └── seed.sql                              # Seed records with BCrypt passwords & test data
 ├── backend/                                  # Spring Boot 3 REST API (Port 8080)
 │   ├── pom.xml
+│   ├── uploads/                              # Secure server storage for verification PDFs (git-ignored)
 │   ├── src/main/resources/
-│   │   ├── application.properties
-│   │   └── application-local.properties.example
+│   │   ├── application.properties            # Active Spring configuration
+│   │   ├── schema.sql                        # Fallback / automated test schema
+│   │   └── seed.sql                          # Database bootstrap data
 │   └── src/main/java/com/pawlink/
-│       ├── PawLinkApplication.java           # Entrypoint (P1 managed)
-│       ├── config/AppConfig.java             # BCrypt bean, DBConnectionManager initialization
-│       ├── common/
-│       │   ├── db/DBConnectionManager.java   # Singleton pattern wrapping DataSource
-│       │   └── exception/                    # Custom exceptions + GlobalExceptionHandler
-│       └── user/                             # P1 Vertical
-│           ├── User.java                     # Abstract base entity
-│           ├── PetOwner.java                 # Subclass (role = 'OWNER')
-│           ├── Veterinarian.java             # Subclass (role = 'VET')
-│           ├── PetSitter.java                # Subclass (role = 'SITTER')
-│           ├── Admin.java                    # Subclass (role = 'ADMIN')
-│           ├── UserFactory.java              # Factory pattern instantiation
-│           ├── UserDAO.java                  # JdbcTemplate parameterized queries
-│           ├── UserService.java              # BCrypt hashing & business logic
-│           ├── AuthController.java           # REST Endpoints
-│           └── dto/                          # AuthResponse, LoginRequest, RegisterRequest
-├── swing-vet/                                # Unified Java Swing Desktop Client
-│   ├── pom.xml
-│   └── src/main/java/com/pawlink/vet/
-│       ├── VetApp.java                       # Desktop launcher
-│       ├── api/
-│       │   ├── ApiClient.java                # Java 11+ HttpClient & Jackson; appends X-User-Id
-│       │   ├── Session.java                  # Thread-safe Singleton session context
-│       │   └── ApiException.java             # HTTP error mapping
-│       ├── base/
-│       │   ├── BasePanel.java                # Abstract base panel with branded header
-│       │   ├── BaseTableModel.java           # Generic parameterized TableModel<T>
-│       │   └── Dialogs.java                  # JOptionPane utility helpers
-│       ├── model/                            # Client DTOs
-│       └── view/
-│           ├── LoginFrame.java               # Authentication with quick-fill demo buttons
-│           ├── RegisterDialog.java           # Account registration modal
-│           └── MainFrame.java                # Centralized JTabbedPane shell (P1 managed)
-└── web-portal/                               # Web Portal Gateway (Port 8081)
+│       ├── PawLinkApplication.java           # Backend server entrypoint
+│       ├── admin/                            # Administrator controller, DAO, service & analytics
+│       ├── appointment/                      # Clinic appointment scheduling & management
+│       ├── common/                           # DBConnectionManager, global exception handling
+│       ├── config/                           # DatabaseSeeder, BCrypt security beans
+│       ├── medical/                          # Medical history records & vaccination tracking
+│       ├── payment/                          # Payment processing, wallet transactions & audit log
+│       ├── pet/                              # Pet profiles & breed care guidelines
+│       ├── reminder/                         # Preventive health reminders & scheduler
+│       ├── sitter/                           # Pet sitter directory, bookings & live check-ins
+│       └── user/                             # Authentication, role models, document uploads
+└── swing-vet/                                # Unified Java Swing Desktop Application
     ├── pom.xml
-    └── src/main/
-        ├── java/com/pawlink/web/
-        │   ├── WebPortalApplication.java
-        │   ├── api/ApiGateway.java           # Spring 6 RestClient forwarding X-User-Id
-        │   ├── config/RoleGuardInterceptor.java
-        │   └── controller/AuthWebController.java
-        └── resources/templates/
-            ├── layout.html                   # Shared Bootstrap 5 navbar fragment (P1 managed)
-            └── auth/                         # login.html, register.html
+    └── src/main/java/com/pawlink/vet/
+        ├── VetApp.java                       # Swing client entrypoint
+        ├── api/                              # HTTP client, session state & role headers
+        ├── base/                             # BasePanel, BaseTableModel, theme dialogs
+        ├── model/                            # Data Transfer Objects (DTOs)
+        └── view/                             # Role-based panels, dialogs & navigation shell
 ```
 
 ---
 
-## 2. API Contract & Auth Architecture
+## 2. Core Verticals & Role Capabilities
 
-PawLink adopts a **simplified session auth model without JWT**:
-1. **Login:** `POST /api/auth/login` verifies credentials and returns:
-   ```json
-   {
-     "id": 1,
-     "name": "Dr. Sarah Jenkins",
-     "email": "vet.sarah@pawlink.com",
-     "role": "VET"
-   }
-   ```
-2. **Subsequent Calls:** All authenticated requests forward the `X-User-Id: <id>` HTTP header.
-   - In **Swing**: `ApiClient` automatically extracts `Session.getInstance().getUserId()` and attaches `X-User-Id`.
-   - In **Web Portal**: `ApiGateway` extracts the user from `HttpSession` and forwards `X-User-Id`.
-3. **Password Security:** Hashed and verified using Spring Security's `BCryptPasswordEncoder`.
+PawLink delivers a cohesive experience tailored to each participant:
 
-### Core Endpoints Implemented
+### 🐶 Pet Owners
+* **Pet Registry & Profiles:** Register and manage multiple pets (dogs, cats, birds, etc.) with age, breed, gender, and weight metrics.
+* **Breed-Specific Care:** Instant breed care recommendations and preventive guidelines.
+* **Veterinary Appointments:** Browse available licensed veterinarians, schedule clinic consultations, and review upcoming/past appointments.
+* **Verified Pet Sitter Directory:** Discover vetted sitters filtered strictly by verified status and view approved hourly rates in `₹/hr`.
+* **Booking & Session Tracking:** Book sitter sessions, inspect live check-in updates and notes from sitters, cancel pending requests, or end active sessions.
+* **Automated Payment Settlement:** Ending a sitting session automatically releases payment from the owner's balance to the sitter's wallet.
+* **Transaction History:** Real-time billing audit log showing payment methods (Wallet, UPI, Card), reference IDs, and amounts in `₹` INR.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/auth/register` | Registers user (`OWNER`, `VET`, `SITTER`, `ADMIN`) with BCrypt password hashing |
-| `POST` | `/api/auth/login` | Authenticates email & password, returns user info |
-| `GET` | `/api/vets` | Returns all registered Veterinarians (`role = 'VET'`) |
-| `GET` | `/api/auth/me` | Validates session via `X-User-Id` header |
+### 🩺 Veterinarians
+* **Clinic Appointments:** View upcoming consultations, accept/manage patient visits, and review owner contact details.
+* **Medical & Vaccination Timeline:** Maintain medical history records, diagnostic summaries, and vaccination timelines per pet.
+* **Clinical Reminders:** Issue preventive health reminders (deworming, vaccination booster dates, annual check-ups) to pet owners.
+
+### 🐾 Pet Sitters
+* **Job Dashboard:** View assigned sitting bookings across all lifecycle states (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`).
+* **Live Check-In Feed:** Submit live timestamped check-in notes and activity updates for owners to review in real time.
+* **Profile & Earnings:** Manage profile details and track earned income through approved hourly rates (`₹/hr`).
+
+### 🛡️ Platform Administrators
+* **Sitter Approval Workflow:** Dedicated tab to review pending sitter registrations, inspect uploaded government ID proofs and qualification certificates (PDF), and confirm or adjust their approved hourly rate (`₹/hr`) prior to activation.
+* **Veterinarian Verification:** Dedicated tab to inspect submitted medical qualifications, license certificates, and identity documents before granting clinical access.
+* **Aggregated System Analytics:** Live metrics dashboard calculating total users by role, clinic consultations per veterinarian, bookings per sitter, and overall platform volume.
 
 ---
 
-## 3. How to Run
+## 3. Security, Compliance & Data Policies
 
-### Step 1: Database Setup
-Execute the DDL and Seed scripts in PostgreSQL / Supabase SQL Editor:
+1. **Role Registration Controls:**
+   * Public registration allows only `Pet Owner`, `Pet Sitter`, and `Veterinarian` roles.
+   * `ADMIN` role creation via the public API or GUI is strictly prohibited. Admin credentials are provisioned exclusively through environment variables (`.env`) and seeded at startup.
+2. **Document Upload & Server Storage Security:**
+   * Sitters must upload: **Government ID Proof** and **Experience / Qualification Certificate** (PDF up to 10MB each).
+   * Vets must upload: **Government ID Proof** and **Medical Qualification Certificate** (PDF up to 10MB each).
+   * Files are stored in a dedicated, secure server directory (`backend/uploads/`) and **strictly excluded from Git tracking** via `.gitignore`.
+   * Document viewing and downloads (`/api/admin/documents/*`) are protected by server-side authorization checks requiring administrator privileges.
+3. **Account Approval Gate:**
+   * Newly registered Sitters and Vets are marked `verified = FALSE` and cannot log in until approved by an administrator. Login attempts display a clear message indicating pending review.
+4. **Phone Number Standards:**
+   * Strictly enforces Indian telephone numbering: `+91` country code prefix followed by exactly 10 digits (`+91XXXXXXXXXX`).
+5. **Currency Uniformity:**
+   * All monetary figures across backend entities, DTOs, invoices, tables, and dialogs use Indian Rupee (`₹` INR).
+6. **Pure JDBC Architecture:**
+   * 100% of database interactions are written in plain, optimized SQL using Spring's `JdbcTemplate` with parameterized queries and explicit `RowMapper<T>` implementations.
+   * **Strictly NO JPA / Hibernate ORM** to ensure absolute predictability and optimal performance.
+7. **Credential Protection:**
+   * Passwords are encrypted using Spring Security's `BCryptPasswordEncoder` with salt rounds before database persistence.
+
+---
+
+## 4. REST API Overview
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Register new Owner, Sitter, or Vet (supports multipart PDFs) | Public |
+| `POST` | `/api/auth/login` | Authenticate user; blocks unverified Sitters/Vets | Public |
+| `GET` | `/api/auth/me` | Retrieve profile of the currently authenticated user | Authenticated |
+| `GET` | `/api/pets` | List pets owned by the requesting owner | Owner |
+| `POST` | `/api/pets` | Register a new pet profile | Owner |
+| `GET` | `/api/appointments` | List appointments for user (filtered by owner or vet) | Owner / Vet |
+| `POST` | `/api/appointments` | Book a consultation appointment with a veterinarian | Owner |
+| `GET` | `/api/sitters` | Directory of verified pet sitters with hourly rates | Owner / Admin |
+| `GET` | `/api/sitter-bookings` | List sitter bookings and jobs | Owner / Sitter |
+| `POST` | `/api/sitter-bookings` | Book a pet sitting engagement | Owner |
+| `PATCH` | `/api/sitter-bookings/{id}/end` | End sitting session and trigger payment release | Owner |
+| `PATCH` | `/api/sitter-bookings/{id}/cancel` | Cancel a sitting booking | Owner / Sitter |
+| `POST` | `/api/sitter-bookings/{id}/checkin` | Submit live check-in note with timestamp | Sitter |
+| `GET` | `/api/medical-records/pet/{petId}` | Retrieve chronological medical timeline for a pet | Owner / Vet |
+| `POST` | `/api/medical-records` | Add a diagnosis or medical treatment record | Vet |
+| `GET` | `/api/vaccinations/pet/{petId}` | Retrieve vaccination records for a pet | Owner / Vet |
+| `POST` | `/api/vaccinations` | Record a administered vaccination | Vet |
+| `GET` | `/api/reminders` | Retrieve preventive care reminders | Owner / Vet |
+| `POST` | `/api/reminders` | Create clinical reminder for patient | Vet |
+| `GET` | `/api/payments/user/{userId}` | Retrieve full transaction and billing history in ₹ INR | Owner |
+| `GET` | `/api/admin/sitters` | List all sitters with verification statuses | Admin |
+| `PATCH` | `/api/admin/sitters/{id}/approve` | Approve sitter and set approved hourly rate (`₹/hr`) | Admin |
+| `GET` | `/api/admin/vets` | List all veterinarians with verification statuses | Admin |
+| `PATCH` | `/api/admin/vets/{id}/approve` | Approve veterinarian license | Admin |
+| `GET` | `/api/admin/documents/{userId}` | List uploaded verification documents for applicant | Admin |
+| `GET` | `/api/admin/documents/download/{docId}` | Download or view applicant verification PDF | Admin |
+| `GET` | `/api/admin/stats` | Retrieve aggregated platform metrics and statistics | Admin |
+
+---
+
+## 5. Getting Started
+
+### Prerequisites
+* **Java Development Kit:** JDK 25 LTS (or JDK 21+ / JDK 26)
+* **Maven:** Apache Maven 3.9+
+* **Database:** PostgreSQL 15+ (local or Supabase) or automated fallback to in-memory H2
+
+### Step 1: Environment Configuration
+Copy `.env.example` to `.env` in the repository root and customize credentials:
 ```bash
-# 1. Run Schema
-psql -U postgres -d pawlink -f db/schema.sql
+cp .env.example .env
+```
+Ensure your `.env` contains:
+```properties
+# Database Connection
+DB_URL=jdbc:postgresql://localhost:5432/pawlink
+DB_USER=postgres
+DB_PASSWORD=your_secure_password
 
-# 2. Run Seed Data
+# Platform Administrator Credentials (Strictly provisioned here)
+ADMIN_NAME=Platform Administrator
+ADMIN_EMAIL=admin@pawlink.com
+ADMIN_PHONE=+919876543210
+ADMIN_PASSWORD=AdminSecurePass2026!
+```
+
+### Step 2: Database Initialization (PostgreSQL)
+Run the DDL schema and seed scripts using `psql` or your database manager:
+```bash
+psql -U postgres -d pawlink -f db/schema.sql
 psql -U postgres -d pawlink -f db/seed.sql
 ```
 
-### Step 2: Build All Modules
+### Step 3: Build the Project
+Compile and execute test suites across all modules:
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21" # Or JDK 17+
 mvn clean test
 ```
 
-### Step 3: Run Backend REST API (Port 8080)
-```powershell
-cd backend
-mvn spring-boot:run
-```
+### Step 4: Run the Application
 
-### Step 4: Run Swing Desktop Application
-```powershell
-cd swing-vet
-mvn compile exec:java -Dexec.mainClass="com.pawlink.vet.VetApp"
-```
-*Note: `LoginFrame` includes one-click **Quick Demo Login** buttons for Vet, Owner, Sitter, and Admin roles!*
+#### Option A: Quick Scripts (Recommended)
+* **Windows:**
+  - Launch Backend: `scripts\run-backend.bat`
+  - Launch Swing GUI: `scripts\run-swing-client.bat` (or `scripts\run-swing-debug.bat` for console logs)
+* **Linux / macOS:**
+  - Launch Backend: `./scripts/run-backend.sh`
+  - Launch Swing GUI: `./scripts/run-swing.sh`
 
-### Step 5: (Optional) Run Web Portal (Port 8081)
-```powershell
-cd web-portal
-mvn spring-boot:run
-```
+#### Option B: Maven CLI
+* **Terminal 1 — Backend REST API (Port 8080):**
+  ```bash
+  mvn spring-boot:run -pl backend
+  ```
+* **Terminal 2 — Swing Desktop Application:**
+  ```bash
+  mvn package -pl swing-vet -DskipTests
+  java -jar swing-vet/target/swing-vet-1.0.0.jar
+  ```
 
 ---
 
-## 4. Viva / Teach-Back Guide (Person 1)
+## 6. Pre-Seeded Demo Accounts
 
-When presenting to evaluators, focus on these four core competencies:
+The application login window provides quick credentials for testing all 4 roles:
 
-### 1. Object-Oriented Programming (OOP)
-* **Inheritance:** The abstract base class `User` defines common attributes (`userId`, `name`, `email`, `phone`, `passwordHash`, `createdAt`). Four concrete subclasses (`PetOwner`, `Veterinarian`, `PetSitter`, `Admin`) extend `User` and provide specific role behavior.
-* **Encapsulation:** All fields in `User` are `private`, preventing direct external tampering. State is read or modified through public getters and setters. Subclasses cannot violate parent invariants.
-* **Polymorphism:** The abstract method `public abstract String getRole()` is implemented uniquely by each subclass. Callers can treat any user polymorphically (`User user = userDAO.findByEmail(...)`) while obtaining the correct role without `instanceof` checks.
+| Role | Email | Password | Pre-Configured State |
+|---|---|---|---|
+| **Admin** | `admin@pawlink.com` | `AdminSecurePass2026!` | Full platform administration, sitter/vet approval tabs & stats |
+| **Owner** | `owner.priya@pawlink.com` | `OwnerPass123!` | Registered pets, appointments, wallet balance, sitter bookings |
+| **Vet** | `vet.sarah@pawlink.com` | `VetPass123!` | Approved status, clinic consultations, medical & vaccine timeline |
+| **Sitter** | `sitter.rahul@pawlink.com` | `SitterPass123!` | Approved status, assigned bookings, live check-ins feed |
 
-### 2. Design Patterns
-* **Singleton Pattern (`DBConnectionManager` & `Session`):**
-  - Thread-safe implementation utilizing **Double-Checked Locking** (`volatile` instance + synchronized block).
-  - Eliminates overhead of synchronized access after the instance is initialized.
-  - Centralizes access to the underlying `DataSource` across the application.
-* **Factory Pattern (`UserFactory`):**
-  - `UserFactory.createUser(role, ...)` acts as a centralized factory.
-  - Decouples client code (such as Spring's `RowMapper` and `UserService`) from concrete subclass constructors.
-  - Adding a new user role in the future requires editing only `UserFactory` and extending `User`, adhering to the Open/Closed Principle.
+---
 
-### 3. Database & SQL Best Practices
-* **Parameterized Query:** Role-based lookups use SQL parameters (`?`):
-  ```sql
-  SELECT id, name, email, phone, password_hash, role, created_at FROM users WHERE email = ?
-  ```
-* **Security:** Values are passed via JDBC `PreparedStatement` to prevent SQL injection.
-* **Pure JdbcTemplate:** Implemented without JPA/Hibernate annotations (`@Entity`, `@Table`), maintaining direct control over database transactions and performance.
+## 7. Testing & Quality Assurance
 
-### 4. System Architecture
-* **Centralized API Client / Gateway:**
-  - `ApiClient` in Swing and `ApiGateway` in Web Portal centralize all HTTP networking.
-  - Automatically appends the required `X-User-Id` header to every outgoing request.
-  - Avoids duplicating networking and JSON error handling logic across feature panels.
+PawLink contains comprehensive automated unit and integration tests covering business logic, data access, role restrictions, and REST controller endpoints:
+
+```powershell
+mvn test
+```
+* **Backend:** 73 passing tests covering `AdminController`, `AdminService`, `AuthController`, `UserService`, `AppointmentService`, `SittingBookingService`, `ReminderScheduler`, and `PaymentDAO`.
+* **Swing Client:** Shaded standalone distribution verified on JDK 25 LTS.

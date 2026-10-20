@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pawlink.sitter.SitterDAO;
 import com.pawlink.user.UserDAO;
 import com.pawlink.user.UserFactory;
+import com.pawlink.vet.VetDAO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,9 +38,13 @@ public class AdminControllerTest {
     private SitterDAO sitterDAO;
 
     @Autowired
+    private VetDAO vetDAO;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     private Long unverifiedSitterId;
+    private Long unverifiedVetId;
 
     @BeforeEach
     void setUp() {
@@ -50,21 +55,25 @@ public class AdminControllerTest {
         jdbcTemplate.update("DELETE FROM reminders");
         jdbcTemplate.update("DELETE FROM medical_records");
         jdbcTemplate.update("DELETE FROM vaccinations");
+        jdbcTemplate.update("DELETE FROM user_documents");
+        jdbcTemplate.update("DELETE FROM vets");
         jdbcTemplate.update("DELETE FROM sitters");
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
         // Create Unverified Sitter
-        var sitter = UserFactory.createUser("SITTER", null, "Alex Pending", "alex.sitter@pawlink.com", "555-0801", "hash", LocalDateTime.now());
+        var sitter = UserFactory.createUser("SITTER", null, "Alex Pending", "alex.sitter@pawlink.com", "+919876543801", "hash", LocalDateTime.now());
         userDAO.insert(sitter);
         unverifiedSitterId = sitter.getUserId();
-        sitterDAO.saveSitter(unverifiedSitterId, BigDecimal.valueOf(28.00), false);
+        sitterDAO.saveSitter(unverifiedSitterId, BigDecimal.valueOf(280.00), false);
 
         // Create a Vet and an Owner
-        var vet = UserFactory.createUser("VET", null, "Dr. Sarah", "sarah@pawlink.com", "555-0802", "hash", LocalDateTime.now());
+        var vet = UserFactory.createUser("VET", null, "Dr. Sarah", "sarah@pawlink.com", "+919876543802", "hash", LocalDateTime.now());
         userDAO.insert(vet);
+        unverifiedVetId = vet.getUserId();
+        vetDAO.saveVet(unverifiedVetId, false);
 
-        var owner = UserFactory.createUser("OWNER", null, "Lisa Owner", "lisa@pawlink.com", "555-0803", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "Lisa Owner", "lisa@pawlink.com", "+919876543803", "hash", LocalDateTime.now());
         userDAO.insert(owner);
     }
 
@@ -75,6 +84,15 @@ public class AdminControllerTest {
                 .andExpect(status().isNoContent());
 
         assertTrue(sitterDAO.isVerified(unverifiedSitterId));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/admin/vets/{id}/approve approves unverified veterinarian")
+    void testApproveVet() throws Exception {
+        mockMvc.perform(patch("/api/admin/vets/" + unverifiedVetId + "/approve"))
+                .andExpect(status().isNoContent());
+
+        assertTrue(vetDAO.isVerified(unverifiedVetId));
     }
 
     @Test
@@ -99,5 +117,14 @@ public class AdminControllerTest {
                 .andExpect(jsonPath("$[0].name", is("Alex Pending")))
                 .andExpect(jsonPath("$[0].verified", is(false)));
     }
-}
 
+    @Test
+    @DisplayName("GET /api/admin/vets returns all veterinarians")
+    void testGetAllVets() throws Exception {
+        mockMvc.perform(get("/api/admin/vets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name", is("Dr. Sarah")))
+                .andExpect(jsonPath("$[0].verified", is(false)));
+    }
+}

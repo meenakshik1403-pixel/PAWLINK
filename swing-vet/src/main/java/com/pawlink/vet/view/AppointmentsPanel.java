@@ -6,6 +6,7 @@ import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
 import com.pawlink.vet.model.AppointmentDTO;
+import com.pawlink.vet.model.UserDTO;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -14,28 +15,27 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Vet Appointments & Scheduling Vertical Panel.
- * Extends BasePanel as per team architecture.
- *
- * UI Layout:
- * - Top control bar: Date picker/selector (Today, Tomorrow, Specific Date, All) + Vet ID selector + "Load Schedule" button.
- * - Center JTable: Appointment ID, Pet Name, Owner Name, Doctor/Vet, Time Slot, Status.
- * - Bottom action bar: "Confirm", "Mark Completed", "Cancel", and "Book New Appointment".
- * - Status updates execute PATCH /api/appointments/{id}/status.
+ * Dynamically adapts to logged-in user role:
+ * - OWNER: Displays their pets' appointments with date and doctor filters, book new appointment button.
+ * - VET: Displays clinician's appointments with today/tomorrow/all filters and confirm/complete actions.
+ * - ADMIN: Displays all platform appointments with doctor dropdown filter.
  */
 public class AppointmentsPanel extends BasePanel {
 
     private final JComboBox<String> dateQuickSelect;
     private final JTextField dateField;
-    private final JTextField vetIdField;
+    private final JComboBox<String> doctorFilterComboBox;
+    private final Map<Integer, Long> doctorIndexToId = new HashMap<>();
     private final JButton loadButton;
     private final JButton bookNewButton;
+    private final JLabel statusHintLabel;
 
     private final AppointmentTableModel tableModel;
     private final JTable appointmentTable;
@@ -44,25 +44,37 @@ public class AppointmentsPanel extends BasePanel {
     private final JButton completeButton;
     private final JButton cancelButton;
 
-    public AppointmentsPanel() {
-        super("📅 Vet Appointments & Scheduling", "Manage clinic consultations, time slot collisions, and status workflows");
+    private final Session session;
 
-        // 1. Top Bar Configuration
-        dateQuickSelect = new JComboBox<>(new String[]{"Today", "Tomorrow", "Next 7 Days", "All Dates", "Custom Date"});
+    public AppointmentsPanel() {
+        super(
+                getAdaptiveTitle(),
+                getAdaptiveSubtitle()
+        );
+        this.session = Session.getInstance();
+
+        // 1. Date filter setup
+        String[] dateOptions;
+        if (session.isVet()) {
+            dateOptions = new String[]{"Today", "Tomorrow", "Next 7 Days", "All Dates", "Custom Date"};
+        } else {
+            dateOptions = new String[]{"All Dates", "Today", "Tomorrow", "Custom Date"};
+        }
+        dateQuickSelect = new JComboBox<>(dateOptions);
         dateQuickSelect.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        dateField = new JTextField(LocalDate.now().toString(), 10);
+        dateField = new JTextField(session.isVet() ? LocalDate.now().toString() : "", 10);
         dateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        dateField.setEnabled("Custom Date".equals(dateQuickSelect.getSelectedItem()));
 
-        // Default vet ID to currently logged-in user if VET, else 1 (demo Dr. Sarah)
-        Long currentUserId = Session.getInstance().getUserId();
-        String initialVetId = (currentUserId != null && "VET".equalsIgnoreCase(Session.getInstance().getRole()))
-                ? String.valueOf(currentUserId)
-                : "1";
-        vetIdField = new JTextField(initialVetId, 5);
-        vetIdField.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        // 2. Doctor selection (dropdown for Owner/Admin, label for Vet)
+        doctorFilterComboBox = new JComboBox<>();
+        doctorFilterComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        doctorFilterComboBox.addItem("All Doctors");
+        doctorIndexToId.put(0, null);
 
-        loadButton = new JButton("Load Schedule");
+        // Buttons
+        loadButton = new JButton("Refresh");
         loadButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         loadButton.setBackground(new Color(13, 148, 136)); // Teal
         loadButton.setForeground(Color.WHITE);
@@ -70,15 +82,20 @@ public class AppointmentsPanel extends BasePanel {
         loadButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         bookNewButton = new JButton("➕ Book Appointment");
-        bookNewButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        bookNewButton.setFont(new Font("Segoe UI", Font.BOLD, session.isOwner() ? 14 : 12));
         bookNewButton.setBackground(new Color(37, 99, 235)); // Blue
         bookNewButton.setForeground(Color.WHITE);
         bookNewButton.setFocusPainted(false);
         bookNewButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        if (session.isOwner()) {
+            bookNewButton.setPreferredSize(new Dimension(190, 42));
+            bookNewButton.setBorder(new EmptyBorder(8, 16, 8, 16));
+            setHeaderAccessory(bookNewButton);
+        }
 
         JPanel topBar = createTopBar();
 
-        // 2. Center Table Configuration
+        // 3. Center Table Configuration
         tableModel = new AppointmentTableModel();
         appointmentTable = new JTable(tableModel);
         appointmentTable.setRowHeight(36);
@@ -98,7 +115,11 @@ public class AppointmentsPanel extends BasePanel {
                 new EmptyBorder(0, 0, 0, 0)
         ));
 
-        // 3. Bottom Action Buttons
+        // 4. Bottom Action Buttons & Status Hint
+        statusHintLabel = new JLabel("Loading appointments...");
+        statusHintLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        statusHintLabel.setForeground(new Color(100, 116, 139));
+
         confirmButton = new JButton("✅ Confirm Slot");
         confirmButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         confirmButton.setBackground(new Color(22, 163, 74)); // Green
@@ -134,11 +155,32 @@ public class AppointmentsPanel extends BasePanel {
 
         setContent(mainContainer);
 
-        // Listeners
+        // Listeners & Initial Load
         initListeners();
-
-        // Initial Load
+        loadDoctorsDropdown();
         loadAppointments();
+    }
+
+    private static String getAdaptiveTitle() {
+        Session s = Session.getInstance();
+        if (s.isOwner()) {
+            return "🏥 My Pet Appointments";
+        } else if (s.isVet()) {
+            return "📅 Clinical Consultations & Schedule";
+        } else {
+            return "📅 Clinic Appointments & Scheduling";
+        }
+    }
+
+    private static String getAdaptiveSubtitle() {
+        Session s = Session.getInstance();
+        if (s.isOwner()) {
+            return "View scheduled clinic consultations, check appointment status, or book a doctor";
+        } else if (s.isVet()) {
+            return "Manage daily patient consultations, confirm bookings, and mark clinic visits completed";
+        } else {
+            return "Platform-wide appointment schedule, booking conflicts, and status workflows";
+        }
     }
 
     private JPanel createTopBar() {
@@ -149,12 +191,24 @@ public class AppointmentsPanel extends BasePanel {
                 new EmptyBorder(8, 12, 8, 12)
         ));
 
-        JLabel vetLabel = new JLabel("Vet ID:");
-        vetLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        bar.add(vetLabel);
-        bar.add(vetIdField);
+        if (session.isVet()) {
+            JLabel doctorBadge = new JLabel("Doctor: " + (session.getName() != null ? session.getName() : "Dr. Sarah"));
+            doctorBadge.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            doctorBadge.setForeground(new Color(13, 148, 136));
+            bar.add(doctorBadge);
 
-        JLabel filterLabel = new JLabel("Filter Date:");
+            JSeparator sep0 = new JSeparator(SwingConstants.VERTICAL);
+            sep0.setPreferredSize(new Dimension(2, 24));
+            bar.add(sep0);
+        } else {
+            // For Owner or Admin, show doctor filter dropdown
+            JLabel docLabel = new JLabel("Doctor:");
+            docLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            bar.add(docLabel);
+            bar.add(doctorFilterComboBox);
+        }
+
+        JLabel filterLabel = new JLabel("Date:");
         filterLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         bar.add(filterLabel);
         bar.add(dateQuickSelect);
@@ -162,32 +216,30 @@ public class AppointmentsPanel extends BasePanel {
 
         bar.add(loadButton);
 
-        JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
-        sep.setPreferredSize(new Dimension(2, 26));
-        bar.add(sep);
-
-        bar.add(bookNewButton);
-
         return bar;
     }
 
     private JPanel createBottomBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
+        JPanel bar = new JPanel(new BorderLayout(12, 0));
         bar.setBackground(Color.WHITE);
         bar.setBorder(new CompoundBorder(
                 new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(8, 12, 8, 12)
+                new EmptyBorder(8, 14, 8, 14)
         ));
 
-        JLabel hint = new JLabel("Select a row to change status: ");
-        hint.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        hint.setForeground(new Color(100, 116, 139));
+        bar.add(statusHintLabel, BorderLayout.WEST);
 
-        bar.add(hint);
-        bar.add(confirmButton);
-        bar.add(completeButton);
-        bar.add(cancelButton);
+        JPanel actionGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actionGroup.setOpaque(false);
 
+        // Owners only cancel; Vets and Admins can Confirm, Complete, and Cancel
+        if (!session.isOwner()) {
+            actionGroup.add(confirmButton);
+            actionGroup.add(completeButton);
+        }
+        actionGroup.add(cancelButton);
+
+        bar.add(actionGroup, BorderLayout.EAST);
         return bar;
     }
 
@@ -248,11 +300,12 @@ public class AppointmentsPanel extends BasePanel {
             } else if ("Tomorrow".equals(selected)) {
                 dateField.setText(LocalDate.now().plusDays(1).toString());
                 dateField.setEnabled(false);
-            } else if ("All Dates".equals(selected)) {
+            } else if ("Next 7 Days".equals(selected) || "All Dates".equals(selected)) {
                 dateField.setText("");
                 dateField.setEnabled(false);
             } else {
                 dateField.setEnabled(true);
+                dateField.requestFocusInWindow();
             }
         });
 
@@ -277,56 +330,107 @@ public class AppointmentsPanel extends BasePanel {
         });
     }
 
-    public void loadAppointments() {
-        String vetIdText = vetIdField.getText().trim();
-        if (vetIdText.isEmpty()) {
-            showError("Please specify a Veterinarian ID.");
-            return;
-        }
+    private void loadDoctorsDropdown() {
+        if (session.isVet()) return;
 
-        Long vetId;
-        try {
-            vetId = Long.parseLong(vetIdText);
-        } catch (NumberFormatException ex) {
-            showError("Veterinarian ID must be a numeric integer.");
-            return;
+        SwingWorker<List<UserDTO>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<UserDTO> doInBackground() throws Exception {
+                return ApiClient.getInstance().getList("/api/vets", UserDTO.class);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<UserDTO> vets = get();
+                    doctorFilterComboBox.removeAllItems();
+                    doctorIndexToId.clear();
+
+                    doctorFilterComboBox.addItem("All Doctors");
+                    doctorIndexToId.put(0, null);
+
+                    int idx = 1;
+                    for (UserDTO v : vets) {
+                        doctorFilterComboBox.addItem(v.getName());
+                        doctorIndexToId.put(idx++, v.getId());
+                    }
+                } catch (Exception ignored) {}
+            }
+        };
+        worker.execute();
+    }
+
+    public void loadAppointments() {
+        StringBuilder url = new StringBuilder("/api/appointments");
+        List<String> params = new ArrayList<>();
+
+        if (session.isOwner()) {
+            params.add("ownerId=" + session.getUserId());
+        } else if (session.isVet()) {
+            params.add("vetId=" + session.getUserId());
+        } else {
+            // Admin: check selected doctor in dropdown
+            int selIdx = doctorFilterComboBox.getSelectedIndex();
+            Long vetId = doctorIndexToId.get(selIdx);
+            if (vetId != null) {
+                params.add("vetId=" + vetId);
+            }
         }
 
         String dateText = dateField.getText().trim();
-        String url;
         if (!dateText.isEmpty()) {
             try {
                 LocalDate.parse(dateText);
-                url = "/api/appointments?vetId=" + vetId + "&date=" + dateText;
-            } catch (Exception ex) {
-                showError("Invalid date format. Use YYYY-MM-DD.");
-                return;
-            }
-        } else {
-            url = "/api/appointments?vetId=" + vetId;
+                params.add("date=" + dateText);
+            } catch (Exception ignored) {}
+        } else if ("Today".equals(dateQuickSelect.getSelectedItem())) {
+            params.add("date=today");
+        } else if ("Tomorrow".equals(dateQuickSelect.getSelectedItem())) {
+            params.add("date=tomorrow");
+        }
+
+        if (!params.isEmpty()) {
+            url.append("?").append(String.join("&", params));
         }
 
         loadButton.setEnabled(false);
         loadButton.setText("Loading...");
+        statusHintLabel.setText("Fetching appointments...");
+
+        final String requestUrl = url.toString();
 
         SwingWorker<List<AppointmentDTO>, Void> worker = new SwingWorker<>() {
             @Override
             protected List<AppointmentDTO> doInBackground() throws Exception {
-                return ApiClient.getInstance().getList(url, AppointmentDTO.class);
+                return ApiClient.getInstance().getList(requestUrl, AppointmentDTO.class);
             }
 
             @Override
             protected void done() {
                 loadButton.setEnabled(true);
-                loadButton.setText("Load Schedule");
+                loadButton.setText("Refresh");
                 try {
                     List<AppointmentDTO> list = get();
+
+                    // If Owner selected a specific doctor in the dropdown, filter client-side:
+                    if (session.isOwner()) {
+                        int selIdx = doctorFilterComboBox.getSelectedIndex();
+                        Long filterVetId = doctorIndexToId.get(selIdx);
+                        if (filterVetId != null) {
+                            list = list.stream().filter(a -> filterVetId.equals(a.getVetId())).toList();
+                        }
+                    }
+
                     tableModel.setItems(list);
+
+                    // Update subtle status label - NO ANNOYING MODAL POPUP!
                     if (list.isEmpty()) {
-                        showInfo("No appointments found for the selected criteria.");
+                        statusHintLabel.setText("No appointments found for the selected criteria.");
+                    } else {
+                        statusHintLabel.setText(list.size() + " appointment(s) displayed. Select a row to update.");
                     }
                 } catch (Exception ex) {
-                    showError("Failed to load appointments: " + ex.getMessage());
+                    statusHintLabel.setText("Failed to load appointments: " + ex.getMessage());
                 }
             }
         };

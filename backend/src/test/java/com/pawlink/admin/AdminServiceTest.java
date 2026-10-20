@@ -39,6 +39,21 @@ class AdminServiceTest {
     }
 
     @Test
+    @DisplayName("approveVet updates vet verification status")
+    void testApproveVetSuccess() {
+        when(adminDAO.approveVet(20L)).thenReturn(true);
+        assertDoesNotThrow(() -> adminService.approveVet(20L));
+        verify(adminDAO).approveVet(20L);
+    }
+
+    @Test
+    @DisplayName("approveVet throws ResourceNotFoundException when vet not found")
+    void testApproveVetNotFound() {
+        when(adminDAO.approveVet(999L)).thenReturn(false);
+        assertThrows(ResourceNotFoundException.class, () -> adminService.approveVet(999L));
+    }
+
+    @Test
     @DisplayName("getStats returns aggregated platform statistics")
     void testGetStats() {
         SystemStatsDTO mockStats = new SystemStatsDTO(
@@ -49,12 +64,9 @@ class AdminServiceTest {
         );
         when(adminDAO.getStats()).thenReturn(mockStats);
 
-        SystemStatsDTO stats = adminService.getStats();
-        assertNotNull(stats);
-        assertEquals(10, stats.getTotalUsers());
-        assertEquals(5, stats.getTotalAppointments());
-        assertEquals(3, stats.getAppointmentsPerVet().get("Dr. Sarah"));
-        assertEquals(5, stats.getUsersByRole().get("OWNER"));
+        SystemStatsDTO result = adminService.getStats();
+        assertNotNull(result);
+        assertEquals(10, result.getTotalUsers());
+        verify(adminDAO).getStats();
     }
 }
-

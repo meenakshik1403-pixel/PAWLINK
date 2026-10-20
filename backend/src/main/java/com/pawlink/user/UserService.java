@@ -1,31 +1,40 @@
 package com.pawlink.user;
 
+import com.pawlink.common.exception.AccountPendingApprovalException;
 import com.pawlink.common.exception.AuthenticationFailedException;
 import com.pawlink.common.exception.ResourceNotFoundException;
 import com.pawlink.common.exception.UserAlreadyExistsException;
+import com.pawlink.sitter.SitterDAO;
 import com.pawlink.user.dto.AuthResponse;
 import com.pawlink.user.dto.LoginRequest;
 import com.pawlink.user.dto.RegisterRequest;
 import com.pawlink.user.dto.UserSummaryDTO;
+import com.pawlink.vet.VetDAO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Service Layer for User management and authentication.
  * Handles BCrypt password hashing, credential verification, and user queries.
+ * Enforces admin verification invariant: Unapproved Sitters and Vets cannot log in.
  */
 @Service
 public class UserService {
 
     private final UserDAO userDAO;
     private final PasswordEncoder passwordEncoder;
+    private final SitterDAO sitterDAO;
+    private final VetDAO vetDAO;
 
-    public UserService(UserDAO userDAO, PasswordEncoder passwordEncoder) {
+    public UserService(UserDAO userDAO, PasswordEncoder passwordEncoder, SitterDAO sitterDAO, VetDAO vetDAO) {
         this.userDAO = userDAO;
         this.passwordEncoder = passwordEncoder;
+        this.sitterDAO = sitterDAO;
+        this.vetDAO = vetDAO;
     }
 
     /**
@@ -36,6 +45,9 @@ public class UserService {
      * @throws UserAlreadyExistsException if email is already taken
      */
     public AuthResponse register(RegisterRequest req) {
+        if ("ADMIN".equalsIgnoreCase(req.getRole())) {
+            throw new IllegalArgumentException("Admin accounts cannot be registered publicly. Admin credentials must be configured via environment variables.");
+        }
         String cleanEmail = req.getEmail().trim().toLowerCase();
 
         if (userDAO.existsByEmail(cleanEmail)) {
@@ -56,6 +68,13 @@ public class UserService {
 
         User savedUser = userDAO.insert(newUser);
 
+        // Initialize unverified status for Sitters and Vets pending admin approval
+        if ("SITTER".equalsIgnoreCase(savedUser.getRole())) {
+            sitterDAO.saveSitter(savedUser.getUserId(), BigDecimal.valueOf(250.0), false);
+        } else if ("VET".equalsIgnoreCase(savedUser.getRole())) {
+            vetDAO.saveVet(savedUser.getUserId(), false);
+        }
+
         return new AuthResponse(
                 savedUser.getUserId(),
                 savedUser.getName(),
@@ -66,10 +85,12 @@ public class UserService {
 
     /**
      * Authenticates a user against stored BCrypt password hash.
+     * Enforces approval checks for Sitters and Vets.
      *
      * @param req Login payload
      * @return AuthResponse upon successful authentication
      * @throws AuthenticationFailedException if email not found or password mismatch
+     * @throws AccountPendingApprovalException if Sitter or Vet is not yet approved by an Admin
      */
     public AuthResponse login(LoginRequest req) {
         String cleanEmail = req.getEmail().trim().toLowerCase();
@@ -79,6 +100,17 @@ public class UserService {
 
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
             throw new AuthenticationFailedException("Invalid email or password.");
+        }
+
+        // Enforce admin verification invariant for Sitter and Vet logins
+        if ("SITTER".equalsIgnoreCase(user.getRole())) {
+            if (!sitterDAO.isVerified(user.getUserId())) {
+                throw new AccountPendingApprovalException("Your Pet Sitter account is pending admin approval. Please wait for an administrator to verify your profile before logging in.");
+            }
+        } else if ("VET".equalsIgnoreCase(user.getRole())) {
+            if (!vetDAO.isVerified(user.getUserId())) {
+                throw new AccountPendingApprovalException("Your Veterinarian account is pending admin approval. Please wait for an administrator to verify your credentials before logging in.");
+            }
         }
 
         return new AuthResponse(
@@ -110,11 +142,11 @@ public class UserService {
      * Retrieves a user by their ID.
      *
      * @param id user ID
-     * @return User domain object
-     * @throws ResourceNotFoundException if user not found
+     * @return concrete User instance
+     * @throws ResourceNotFoundException if user ID does not exist
      */
     public User getUserById(Long id) {
         return userDAO.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
     }
 }

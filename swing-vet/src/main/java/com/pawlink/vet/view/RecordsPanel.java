@@ -124,6 +124,8 @@ public class RecordsPanel extends BasePanel {
         JScrollPane scrollPane = new JScrollPane(historyTable);
         scrollPane.setBorder(new LineBorder(new Color(226, 232, 240), 1, true));
         scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setPreferredSize(new Dimension(800, 240));
+        scrollPane.setMinimumSize(new Dimension(500, 160));
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
         // 4. Assemble Center Content
@@ -137,7 +139,13 @@ public class RecordsPanel extends BasePanel {
         mainLayout.add(topBar, BorderLayout.NORTH);
         mainLayout.add(centerContent, BorderLayout.CENTER);
 
-        setContent(mainLayout);
+        JScrollPane pageScrollPane = new JScrollPane(mainLayout);
+        pageScrollPane.setBorder(null);
+        pageScrollPane.setOpaque(false);
+        pageScrollPane.getViewport().setOpaque(false);
+        pageScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        setContent(pageScrollPane);
 
         // 5. Action Listeners
         loadButton.addActionListener(e -> loadPetRecords());

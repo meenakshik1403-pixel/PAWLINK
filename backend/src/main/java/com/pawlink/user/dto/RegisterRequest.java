@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Data Transfer Object for user registration.
+ * ADMIN role cannot be registered publicly; only OWNER, VET, and SITTER are permitted.
+ * Phone numbers are strictly 10 digits with a +91 prefix.
  */
 public class RegisterRequest {
 
@@ -22,10 +24,11 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
 
+    @Pattern(regexp = "^\\+91\\d{10}$", message = "Phone number must be in +91XXXXXXXXXX format with strictly 10 digits.")
     private String phone;
 
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "(?i)^(OWNER|VET|SITTER|ADMIN)$", message = "Role must be OWNER, VET, SITTER, or ADMIN")
+    @Pattern(regexp = "(?i)^(OWNER|VET|SITTER)$", message = "Role must be OWNER, VET, or SITTER (ADMIN accounts cannot be registered publicly)")
     private String role;
 
     public RegisterRequest() {
@@ -35,7 +38,7 @@ public class RegisterRequest {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.phone = phone;
+        setPhone(phone);
         this.role = role;
     }
 
@@ -68,7 +71,18 @@ public class RegisterRequest {
     }
 
     public void setPhone(String phone) {
-        this.phone = phone;
+        if (phone != null) {
+            String trimmed = phone.trim().replaceAll("[\\s\\-]+", "");
+            if (trimmed.matches("^\\d{10}$")) {
+                this.phone = "+91" + trimmed;
+            } else if (trimmed.matches("^\\+91\\d{10}$")) {
+                this.phone = trimmed;
+            } else {
+                this.phone = phone;
+            }
+        } else {
+            this.phone = null;
+        }
     }
 
     public String getRole() {

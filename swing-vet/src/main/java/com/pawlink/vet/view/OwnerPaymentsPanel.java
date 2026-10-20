@@ -41,7 +41,7 @@ public class OwnerPaymentsPanel extends BasePanel {
                     case 2 -> p.getFormattedDate();
                     case 3 -> p.getPetName() != null ? p.getPetName() : "-";
                     case 4 -> p.getSitterName() != null ? p.getSitterName() : "-";
-                    case 5 -> "$" + (p.getAmount() != null ? p.getAmount() : "0.00");
+                    case 5 -> "₹" + (p.getAmount() != null ? p.getAmount() : "0.00");
                     case 6 -> p.getMethod() != null ? p.getMethod() : "CARD";
                     case 7 -> p.getStatus() != null ? p.getStatus() : "HELD";
                     default -> "";
@@ -50,8 +50,8 @@ public class OwnerPaymentsPanel extends BasePanel {
         };
 
         this.table = new JTable(tableModel);
-        this.totalSpentLabel = new JLabel("$0.00");
-        this.escrowHeldLabel = new JLabel("$0.00");
+        this.totalSpentLabel = new JLabel("₹0.00");
+        this.escrowHeldLabel = new JLabel("₹0.00");
         this.countLabel = new JLabel("0");
 
         setupUI();
@@ -195,8 +195,8 @@ public class OwnerPaymentsPanel extends BasePanel {
                     }
 
                     countLabel.setText(paymentList.size() + " txn(s)");
-                    totalSpentLabel.setText("$" + totalSpent);
-                    escrowHeldLabel.setText("$" + totalHeld);
+                    totalSpentLabel.setText("₹" + totalSpent);
+                    escrowHeldLabel.setText("₹" + totalHeld);
                 } catch (Exception ex) {
                     showError("Failed to load payment history: " + ex.getMessage());
                 }
