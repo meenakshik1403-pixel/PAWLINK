@@ -1,6 +1,7 @@
 package com.pawlink.sitter;
 
 import com.pawlink.appointment.SlotUnavailableException;
+import com.pawlink.payment.PaymentFailedException;
 import com.pawlink.sitter.dto.BookingRequest;
 import com.pawlink.sitter.dto.BookingResponse;
 import com.pawlink.sitter.dto.CheckinRequest;
@@ -73,7 +74,7 @@ public class SitterBookingController {
     public ResponseEntity<BookingResponse> bookSitter(
             @RequestBody BookingRequest request,
             @RequestHeader(name = "X-User-Id", required = false) Long xUserId
-    ) throws UnverifiedSitterException, SlotUnavailableException {
+    ) throws UnverifiedSitterException, SlotUnavailableException, PaymentFailedException {
         if (request.getOwnerId() == null && xUserId != null) {
             request.setOwnerId(xUserId);
         }

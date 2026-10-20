@@ -51,10 +51,19 @@ public class AppointmentController {
     @GetMapping
     public ResponseEntity<List<AppointmentResponse>> getAppointments(
             @RequestParam(name = "vetId", required = false) Long vetId,
-            @RequestParam(name = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(name = "date", required = false) String dateParam,
             @RequestParam(name = "ownerId", required = false) Long ownerId,
             @RequestHeader(name = "X-User-Id", required = false) Long xUserId
     ) {
+        LocalDate date = null;
+        if (dateParam != null && !dateParam.trim().isEmpty()) {
+            if ("today".equalsIgnoreCase(dateParam.trim())) {
+                date = LocalDate.now();
+            } else {
+                date = LocalDate.parse(dateParam.trim());
+            }
+        }
+
         List<Appointment> list;
 
         if (ownerId != null) {

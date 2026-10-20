@@ -27,6 +27,9 @@ class SittingBookingServiceTest {
     @Mock
     private SittingBookingDAO sittingBookingDAO;
 
+    @Mock
+    private com.pawlink.payment.PaymentDAO paymentDAO;
+
     @InjectMocks
     private SittingBookingService sittingBookingService;
 
@@ -52,7 +55,7 @@ class SittingBookingServiceTest {
         when(sitterDAO.findById(10L)).thenReturn(Optional.of(verifiedSitter));
         when(sittingBookingDAO.hasConflict(eq(10L), eq(startTime), eq(endTime))).thenReturn(false);
         when(sittingBookingDAO.insertBooking(any(SittingBooking.class))).thenReturn(100L);
-        when(sittingBookingDAO.insertPayment(eq(100L), any(BigDecimal.class), eq("CARD"), eq("HELD"))).thenReturn(50L);
+        when(paymentDAO.insert(any(com.pawlink.payment.Payment.class), eq(100L))).thenReturn(50L);
 
         SittingBooking mockBooking = new SittingBooking(100L, 1L, 10L, 5L, startTime, endTime, "CONFIRMED");
         mockBooking.setTotalAmount(BigDecimal.valueOf(100.00));
@@ -67,7 +70,7 @@ class SittingBookingServiceTest {
         assertEquals("HELD", result.getPaymentStatus());
 
         verify(sittingBookingDAO).insertBooking(any(SittingBooking.class));
-        verify(sittingBookingDAO).insertPayment(eq(100L), any(BigDecimal.class), eq("CARD"), eq("HELD"));
+        verify(paymentDAO).insert(any(com.pawlink.payment.Payment.class), eq(100L));
     }
 
     @Test

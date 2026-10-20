@@ -184,10 +184,7 @@ public class MainFrame extends JFrame {
      * - Tab 6: Clinic Statistics (P8)
      */
     private void setupVetTabs() {
-        registerTab("📊 Dashboard", createModulePlaceholder(
-                "Veterinarian Overview Dashboard (P7)",
-                "Displays daily appointment schedules and due reminder counts.",
-                "P7 (Pranathi)", "GET /api/appointments?vetId={id}&date=today, GET /api/reminders?due=true"));
+        registerTab("📊 Dashboard", new DashboardPanel());
 
         registerTab("🐕 Patients / Pets", new PetsPanel());
 
@@ -220,10 +217,7 @@ public class MainFrame extends JFrame {
 
         registerTab("⏰ Alerts & Reminders", new RemindersPanel());
 
-        registerTab("💳 Payment History", createModulePlaceholder(
-                "Transaction History (P7)",
-                "View booking payment history and escrow status (HELD / RELEASED).",
-                "P7 (Pranathi)", "GET /api/payments?ownerId={id}"));
+        registerTab("💳 Payment History", new OwnerPaymentsPanel());
     }
 
     /**

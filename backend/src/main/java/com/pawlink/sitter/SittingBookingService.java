@@ -5,6 +5,10 @@ import com.pawlink.common.exception.ResourceNotFoundException;
 import com.pawlink.sitter.dto.BookingRequest;
 import com.pawlink.sitter.dto.BookingResponse;
 import com.pawlink.sitter.dto.CheckinResponse;
+import com.pawlink.payment.Payment;
+import com.pawlink.payment.PaymentDAO;
+import com.pawlink.payment.PaymentFactory;
+import com.pawlink.payment.PaymentFailedException;
 import com.pawlink.sitter.dto.SitterDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +27,12 @@ public class SittingBookingService {
 
     private final SitterDAO sitterDAO;
     private final SittingBookingDAO sittingBookingDAO;
+    private final PaymentDAO paymentDAO;
 
-    public SittingBookingService(SitterDAO sitterDAO, SittingBookingDAO sittingBookingDAO) {
+    public SittingBookingService(SitterDAO sitterDAO, SittingBookingDAO sittingBookingDAO, PaymentDAO paymentDAO) {
         this.sitterDAO = sitterDAO;
         this.sittingBookingDAO = sittingBookingDAO;
+        this.paymentDAO = paymentDAO;
     }
 
     /**
@@ -39,7 +45,8 @@ public class SittingBookingService {
      * @throws SlotUnavailableException  if sitter has an overlapping booking
      */
     @Transactional(rollbackFor = Exception.class)
-    public SittingBooking bookSitter(BookingRequest req) throws UnverifiedSitterException, SlotUnavailableException {
+    public SittingBooking bookSitter(BookingRequest req)
+            throws UnverifiedSitterException, SlotUnavailableException, PaymentFailedException {
         if (req == null) {
             throw new IllegalArgumentException("Booking request cannot be null");
         }
@@ -84,7 +91,14 @@ public class SittingBookingService {
         BigDecimal hourlyRate = sitter.getHourlyRate() != null ? sitter.getHourlyRate() : BigDecimal.valueOf(25.00);
         BigDecimal totalAmount = hourlyRate.multiply(BigDecimal.valueOf(hours));
 
-        // 4. Insert booking into database
+        // 4. P7 Polymorphic Payment Processing: Instantiate via Factory & Process
+        Payment payment = PaymentFactory.createPayment(req.getPaymentMethod(), totalAmount);
+        boolean processed = payment.process();
+        if (!processed) {
+            throw new PaymentFailedException("Payment processing failed for channel: " + payment.getMethod());
+        }
+
+        // 5. Insert booking into database
         SittingBooking booking = new SittingBooking(
                 null,
                 req.getPetId(),
@@ -97,11 +111,10 @@ public class SittingBookingService {
         Long bookingId = sittingBookingDAO.insertBooking(booking);
         booking.setId(bookingId);
 
-        // 5. P7 Pairing: Insert escrow payment in the exact same transaction
-        String paymentMethod = req.getPaymentMethod();
-        sittingBookingDAO.insertPayment(bookingId, totalAmount, paymentMethod, "HELD");
+        // 6. Save payment via PaymentDAO (Strict Transactional Integrity)
+        paymentDAO.insert(payment, bookingId);
 
-        // 6. Return populated entity
+        // 7. Return populated entity
         return sittingBookingDAO.findById(bookingId).orElse(booking);
     }
 
