@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('PawLink - Pet Sitter Approvals')}">
+    <title>PawLink - Pet Sitter Approvals</title>
+</head>
+<body>
+
+<nav th:replace="~{layout :: navbar}"></nav>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">
+                <i class="bi bi-patch-check-fill text-primary me-2"></i>Pet Sitter Verification Queue
+            </h2>
+            <p class="text-muted mb-0">
+                Review sitter applications, audit credentials, and grant verification status required for booking.
+            </p>
+        </div>
+        <div>
+            <a href="/admin/stats" class="btn btn-outline-primary px-3 py-2 shadow-sm">
+                <i class="bi bi-graph-up me-1"></i> View Platform Stats
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Notifications -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${success}">Success message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${error}">Error message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(sitters)}" class="card border-0 shadow-sm p-5 text-center my-4">
+        <div class="my-4">
+            <i class="bi bi-person-check text-muted" style="font-size: 3.5rem;"></i>
+            <h4 class="fw-semibold text-secondary mt-3">No Sitters in Queue</h4>
+            <p class="text-muted">There are no registered sitters found in the system.</p>
+        </div>
+    </div>
+
+    <!-- Sitters Verification Table -->
+    <div th:unless="${#lists.isEmpty(sitters)}" class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-list-check me-2 text-primary"></i>Registered Sitter Applications
+                </h5>
+                <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                    Total: <span th:text="${#lists.size(sitters)}">0</span> Sitters
+                </span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Sitter ID</th>
+                        <th>Name</th>
+                        <th>Contact Details</th>
+                        <th>Hourly Rate</th>
+                        <th>Verification Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="sitter : ${sitters}">
+                        <td class="ps-4 fw-semibold text-muted" th:text="'#' + ${sitter.userId}">#1</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold me-2"
+                                     style="width: 36px; height: 36px; font-size: 0.95rem;"
+                                     th:text="${#strings.substring(sitter.name, 0, 1)}">S</div>
+                                <span class="fw-semibold text-dark" th:text="${sitter.name}">Sitter Name</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div><i class="bi bi-envelope me-1 text-muted"></i><span th:text="${sitter.email}">email@example.com</span></div>
+                            <div th:if="${sitter.phone != null}" class="text-muted small">
+                                <i class="bi bi-telephone me-1"></i><span th:text="${sitter.phone}">555-0101</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-primary">
+                                $<span th:text="${sitter.hourlyRate != null ? sitter.hourlyRate : '0.00'}">25.00</span>
+                                <small class="text-muted fw-normal">/ hr</small>
+                            </span>
+                        </td>
+                        <td>
+                            <span th:if="${sitter.verified}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                <i class="bi bi-patch-check-fill me-1"></i>Verified
+                            </span>
+                            <span th:unless="${sitter.verified}" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                <i class="bi bi-hourglass-split me-1"></i>Pending Verification
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <form th:unless="${sitter.verified}"
+                                  th:action="@{'/admin/sitters/' + ${sitter.userId} + '/approve'}"
+                                  method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success px-3 fw-semibold shadow-sm">
+                                    <i class="bi bi-check-circle me-1"></i> Approve Sitter
+                                </button>
+                            </form>
+                            <span th:if="${sitter.verified}" class="text-muted small">
+                                <i class="bi bi-check2-all text-success me-1"></i>Approved
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>
+

@@ -194,10 +194,7 @@ public class MainFrame extends JFrame {
 
         registerTab("🔔 Reminders", new RemindersPanel());
 
-        registerTab("📈 Analytics", createModulePlaceholder(
-                "Clinic Performance & Appointment Stats (P8)",
-                "Aggregated metrics of appointments, bookings, and active users across the platform.",
-                "P8 (Sivanee)", "GET /api/admin/stats"));
+        registerTab("📈 Analytics", new StatsPanel());
     }
 
     /**
@@ -241,15 +238,9 @@ public class MainFrame extends JFrame {
      * - User Directory (P1)
      */
     private void setupAdminTabs() {
-        registerTab("✅ Sitter Approvals", createModulePlaceholder(
-                "Pet Sitter Verification Queue (P8)",
-                "Review pending sitter registrations and toggle verification flags.",
-                "P8 (Sivanee)", "PATCH /api/admin/sitters/{id}/approve"));
+        registerTab("✅ Sitter Approvals", new AdminSittersPanel());
 
-        registerTab("📊 Platform Statistics", createModulePlaceholder(
-                "System Analytics & Aggregations (P8)",
-                "Platform user counts, appointments per vet, and bookings per sitter.",
-                "P8 (Sivanee)", "GET /api/admin/stats"));
+        registerTab("📊 Platform Statistics", new StatsPanel());
 
         registerTab("👥 User Directory", createDirectoryPanel());
     }

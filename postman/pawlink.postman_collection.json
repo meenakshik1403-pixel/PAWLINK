@@ -1,0 +1,362 @@
+{
+  "info": {
+    "_postman_id": "c67f8a12-8411-4770-bcfa-19280d876a3e",
+    "name": "PawLink - End-to-End Integration Test Collection",
+    "description": "Comprehensive integration testing suite covering the complete PawLink pet care lifecycle (Auth, Pets, Medical, Scheduling with Conflict Check, Reminders, Admin Sitter Approval, and Polymorphic Escrow Booking).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "ownerId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "petId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "vetId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "sitterId",
+      "value": "4",
+      "type": "string"
+    },
+    {
+      "key": "appointmentId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Register Owner",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('ownerId', json.id);",
+              "pm.test('Role is OWNER', function () {",
+              "    pm.expect(json.role).to.eql('OWNER');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sarah Connor\",\n  \"email\": \"sarah.connor@pawlink.com\",\n  \"phone\": \"+1-555-0901\",\n  \"password\": \"password123\",\n  \"role\": \"OWNER\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "2. Add Pet (Dog)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('petId', json.id);",
+              "pm.test('Care guidelines populated', function () {",
+              "    pm.expect(json.careGuidelines).to.include('Daily exercise');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-User-Id", "value": "{{ownerId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ownerId\": {{ownerId}},\n  \"species\": \"Dog\",\n  \"name\": \"Rex\",\n  \"dob\": \"2022-06-15\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/pets",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "pets"]
+        }
+      }
+    },
+    {
+      "name": "3. Vet Logs In via API & Adds Medical Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('Diagnosis recorded', function () {",
+              "    pm.expect(json.diagnosis).to.eql('Healthy Annual Physical Exam');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-User-Id", "value": "1" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"petId\": {{petId}},\n  \"vetId\": 1,\n  \"recordDate\": \"2026-10-20\",\n  \"diagnosis\": \"Healthy Annual Physical Exam\",\n  \"prescription\": \"Nutritional supplements and flea preventative.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/medical/records",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "medical", "records"]
+        }
+      }
+    },
+    {
+      "name": "4. Owner Books Vet Appointment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('appointmentId', json.id);",
+              "pm.test('Status is PENDING', function () {",
+              "    pm.expect(json.status).to.eql('PENDING');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-User-Id", "value": "{{ownerId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vetId\": 1,\n  \"petId\": {{petId}},\n  \"ownerId\": {{ownerId}},\n  \"startTime\": \"2026-11-15T09:00:00\",\n  \"endTime\": \"2026-11-15T10:00:00\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/appointments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "appointments"]
+        }
+      }
+    },
+    {
+      "name": "5. Vet Confirms Appointment in Swing",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('Status transitioned to CONFIRMED', function () {",
+              "    pm.expect(json.status).to.eql('CONFIRMED');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-User-Id", "value": "1" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/appointments/{{appointmentId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "appointments", "{{appointmentId}}", "status"]
+        }
+      }
+    },
+    {
+      "name": "6. Attempt Double-Booking (Verify 409 Conflict)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 409 Conflict', function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('SlotUnavailable error returned', function () {",
+              "    pm.expect(json.error).to.include('not available');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-User-Id", "value": "{{ownerId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vetId\": 1,\n  \"petId\": {{petId}},\n  \"ownerId\": {{ownerId}},\n  \"startTime\": \"2026-11-15T09:30:00\",\n  \"endTime\": \"2026-11-15T10:30:00\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/appointments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "appointments"]
+        }
+      }
+    },
+    {
+      "name": "7. Trigger Reminder Sweep (Observer Engine)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('Sweep completed', function () {",
+              "    pm.expect(json.status).to.eql('SUCCESS');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reminders/run",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reminders", "run"]
+        }
+      }
+    },
+    {
+      "name": "8. Admin Approves Sitter",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 No Content', function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "X-User-Id", "value": "5" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/sitters/4/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "sitters", "4", "approve"]
+        }
+      }
+    },
+    {
+      "name": "9. Book Sitter with Payment (Escrow Secured)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('bookingId', json.id);",
+              "pm.test('Escrow payment held', function () {",
+              "    pm.expect(json.paymentStatus).to.eql('HELD');",
+              "    pm.expect(json.status).to.eql('CONFIRMED');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-User-Id", "value": "{{ownerId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"petId\": {{petId}},\n  \"sitterId\": 4,\n  \"ownerId\": {{ownerId}},\n  \"startTime\": \"2026-11-20T10:00:00\",\n  \"endTime\": \"2026-11-20T14:00:00\",\n  \"paymentMethod\": \"CARD\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/sitter-bookings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sitter-bookings"]
+        }
+      }
+    }
+  ]
+}
+

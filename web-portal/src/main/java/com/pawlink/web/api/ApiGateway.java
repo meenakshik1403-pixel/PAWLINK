@@ -20,6 +20,10 @@ public class ApiGateway {
 
     private final RestClient restClient;
 
+    protected ApiGateway() {
+        this.restClient = null;
+    }
+
     public ApiGateway(@Value("${pawlink.api.base-url:http://localhost:8080}") String baseUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
