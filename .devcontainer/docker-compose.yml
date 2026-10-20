@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount ONLY the project directory to isolate host filesystem and host files from AI tools
+      - ..:/workspaces/PAWLINK:cached
+      # Persist Maven dependencies across rebuilds so deps are cached locally inside Docker
+      - pawlink-m2-cache:/home/vscode/.m2
+    # Bind ports to 0.0.0.0 so backend, web portal, and Swing noVNC GUI are accessible over LAN
+    ports:
+      - "0.0.0.0:8080:8080"   # Spring Boot Backend REST API
+      - "0.0.0.0:8081:8081"   # Spring Boot Web Portal
+      - "0.0.0.0:6080:6080"   # noVNC Browser GUI for Java Swing Desktop Client
+      - "0.0.0.0:5901:5901"   # VNC server port (optional native VNC clients)
+    env_file:
+      - path: ../.env
+        required: false
+      - path: .env
+        required: false
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-}
+      - SPRING_DATASOURCE_DRIVER=${SPRING_DATASOURCE_DRIVER:-}
+      - SUPABASE_PROJECT_ID=${SUPABASE_PROJECT_ID:-}
+      - SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN:-}
+      - DISPLAY=:1
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+volumes:
+  pawlink-m2-cache:
+    name: pawlink-m2-cache
+

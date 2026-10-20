@@ -24,6 +24,8 @@ buildNumber.properties
 # Environment & Local Secrets
 application-local.properties
 application-local.yml
+.devcontainer/.env
+.env
 *.log
 
 # OS
