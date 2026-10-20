@@ -216,10 +216,7 @@ public class MainFrame extends JFrame {
 
         registerTab("🏥 Book Appointment", new AppointmentsPanel());
 
-        registerTab("🏡 Find Pet Sitter", createModulePlaceholder(
-                "Sitter Booking & Escrow Payment (P6 & P7)",
-                "Browse verified sitters, select dates, and confirm bookings with escrow hold.",
-                "P6 (Parvathi) & P7 (Pranathi)", "GET /api/sitters, POST /api/sitter-bookings"));
+        registerTab("🏡 Find Pet Sitter", new FindSitterPanel());
 
         registerTab("⏰ Alerts & Reminders", new RemindersPanel());
 
@@ -236,20 +233,11 @@ public class MainFrame extends JFrame {
      * - Sitter Profile (P6)
      */
     private void setupSitterTabs() {
-        registerTab("📋 Assigned Jobs", createModulePlaceholder(
-                "Sitter Bookings & Schedule (P6)",
-                "View assigned sitting jobs and customer details.",
-                "P6 (Parvathi)", "GET /api/sitter-bookings?sitterId={id}"));
+        registerTab("📋 Assigned Jobs", new SitterBookingsPanel());
 
-        registerTab("📸 Pet Check-Ins", createModulePlaceholder(
-                "Pet Care Check-In Timeline (P6)",
-                "Log timestamped check-in notes and feeding updates for pet owners.",
-                "P6 (Parvathi)", "POST /api/sitter-bookings/{id}/checkins"));
+        registerTab("📸 Pet Check-Ins", new SitterCheckinsPanel());
 
-        registerTab("👤 Sitter Profile", createModulePlaceholder(
-                "Profile & Verification Status (P6 & P8)",
-                "Hourly rate configuration and verification status badge.",
-                "P6 (Parvathi) & P8 (Sivanee)", "GET /api/sitters"));
+        registerTab("👤 Sitter Profile", new SitterProfilePanel());
     }
 
     /**

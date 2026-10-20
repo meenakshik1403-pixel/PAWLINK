@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('PawLink - Find Pet Sitter')}">
+    <title>PawLink - Find Pet Sitter</title>
+</head>
+<body>
+
+<nav th:replace="~{layout :: navbar}"></nav>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-person-heart text-primary me-2"></i>Find a Pet Sitter</h2>
+            <p class="text-muted mb-0">Browse approved sitters, compare hourly rates, and book personalized care with escrow protection.</p>
+        </div>
+        <a href="/bookings" class="btn btn-outline-primary px-3 py-2 shadow-sm">
+            <i class="bi bi-briefcase me-1"></i> View My Bookings
+        </a>
+    </div>
+
+    <!-- Flash Notifications -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${success}">Success message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${error}">Error message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${warning}" class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <span th:text="${warning}">Warning message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(sitters)}" class="card border-0 shadow-sm p-5 text-center my-4">
+        <div class="my-4">
+            <i class="bi bi-person-x text-muted" style="font-size: 3.5rem;"></i>
+            <h4 class="fw-semibold text-secondary mt-3">No Sitters Available</h4>
+            <p class="text-muted">There are currently no pet sitters registered on the platform.</p>
+        </div>
+    </div>
+
+    <!-- Sitters Grid -->
+    <div th:unless="${#lists.isEmpty(sitters)}" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <div class="col" th:each="sitter : ${sitters}">
+            <div class="card h-100 shadow-sm border-0 position-relative">
+                <div class="card-body p-4 d-flex flex-column">
+                    <!-- Top Info -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                             style="width: 48px; height: 48px; font-size: 1.25rem;"
+                             th:text="${#strings.substring(sitter.name, 0, 1)}">S</div>
+                        <div>
+                            <span th:if="${sitter.verified}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                <i class="bi bi-patch-check-fill me-1"></i>Verified Sitter
+                            </span>
+                            <span th:unless="${sitter.verified}" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                <i class="bi bi-hourglass-split me-1"></i>Pending Approval
+                            </span>
+                        </div>
+                    </div>
+
+                    <h5 class="card-title fw-bold text-dark mb-1" th:text="${sitter.name}">Emily Watson</h5>
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-envelope me-1"></i><span th:text="${sitter.email}">email@pawlink.com</span>
+                        <span th:if="${sitter.phone != null}"><br><i class="bi bi-telephone me-1"></i><span th:text="${sitter.phone}">555-0101</span></span>
+                    </p>
+
+                    <!-- Pricing Banner -->
+                    <div class="bg-light rounded p-3 mb-4 mt-auto border">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Hourly Rate:</span>
+                            <span class="fs-5 fw-bold text-primary">
+                                $<span th:text="${sitter.hourlyRate != null ? sitter.hourlyRate : '25.00'}">25.00</span>
+                                <small class="text-muted fs-6 fw-normal">/ hr</small>
+                            </span>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            <i class="bi bi-shield-lock me-1"></i>Escrow Secured Payment
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div>
+                        <a th:if="${sitter.verified}"
+                           th:href="@{'/sitters/' + ${sitter.userId} + '/book'}"
+                           class="btn btn-primary w-100 py-2 fw-semibold">
+                            <i class="bi bi-calendar-plus me-1"></i> Book This Sitter
+                        </a>
+                        <button th:unless="${sitter.verified}"
+                                class="btn btn-secondary w-100 py-2" disabled
+                                title="Domain Invariant: Only verified sitters can be booked">
+                            <i class="bi bi-lock-fill me-1"></i> Verification Pending
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>
+

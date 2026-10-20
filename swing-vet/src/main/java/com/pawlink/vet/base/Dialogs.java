@@ -38,6 +38,15 @@ public class Dialogs {
         );
     }
 
+    public static void showWarning(Component parent, String message) {
+        JOptionPane.showMessageDialog(
+                parent,
+                message,
+                "PawLink - Warning",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
     public static boolean showConfirm(Component parent, String message, String title) {
         int result = JOptionPane.showConfirmDialog(
                 parent,

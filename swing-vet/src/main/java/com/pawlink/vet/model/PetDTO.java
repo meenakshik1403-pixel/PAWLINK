@@ -37,6 +37,10 @@ public class PetDTO {
         return id;
     }
 
+    public Long getPetId() {
+        return id;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }

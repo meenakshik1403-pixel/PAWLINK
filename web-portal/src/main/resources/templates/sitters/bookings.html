@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('PawLink - Bookings & Check-Ins')}">
+    <title>PawLink - Bookings & Check-Ins</title>
+</head>
+<body>
+
+<nav th:replace="~{layout :: navbar}"></nav>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-card-checklist text-primary me-2"></i>Sitter Bookings & Check-Ins</h2>
+            <p class="text-muted mb-0">Track active sitting appointments, monitor escrow status, and follow real-time pet care logs.</p>
+        </div>
+        <a href="/sitters" class="btn btn-primary px-3 py-2 shadow-sm">
+            <i class="bi bi-search me-1"></i> Find Sitter
+        </a>
+    </div>
+
+    <!-- Flash Notifications -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${success}">Success message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${error}">Error message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(bookings)}" class="card border-0 shadow-sm p-5 text-center my-4">
+        <div class="my-4">
+            <i class="bi bi-inbox text-muted" style="font-size: 3.5rem;"></i>
+            <h4 class="fw-semibold text-secondary mt-3">No Bookings Found</h4>
+            <p class="text-muted">You do not have any active or past pet sitting appointments recorded.</p>
+            <a href="/sitters" class="btn btn-outline-primary mt-2">
+                <i class="bi bi-search me-1"></i> Browse Verified Sitters
+            </a>
+        </div>
+    </div>
+
+    <!-- Bookings List -->
+    <div th:unless="${#lists.isEmpty(bookings)}" class="row g-4">
+        <div class="col-12" th:each="booking : ${bookings}">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fs-5 fw-bold text-dark">
+                            <i class="bi bi-tag-fill text-primary me-1"></i>Booking #<span th:text="${booking.id}">1</span>
+                        </span>
+                        <span th:if="${booking.status == 'CONFIRMED'}" class="badge bg-success">Confirmed</span>
+                        <span th:if="${booking.status == 'COMPLETED'}" class="badge bg-primary">Completed</span>
+                        <span th:if="${booking.status == 'CANCELLED'}" class="badge bg-danger">Cancelled</span>
+
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                            <i class="bi bi-shield-lock-fill me-1"></i>Escrow: <span th:text="${booking.paymentStatus != null ? booking.paymentStatus : 'HELD'}">HELD</span>
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-muted small">Total Fee:</span>
+                        <span class="fw-bold fs-5 text-primary ms-1">$<span th:text="${booking.totalAmount != null ? booking.totalAmount : '0.00'}">0.00</span></span>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Pet</small>
+                            <span class="fw-bold text-dark fs-6" th:text="${booking.petName != null ? booking.petName : 'Pet #' + booking.petId}">Buddy</span>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Pet Sitter</small>
+                            <span class="fw-semibold text-dark" th:text="${booking.sitterName != null ? booking.sitterName : 'Sitter #' + booking.sitterId}">Emily Watson</span>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Pet Parent / Owner</small>
+                            <span class="fw-semibold text-dark" th:text="${booking.ownerName != null ? booking.ownerName : 'Owner #' + booking.ownerId}">John Doe</span>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Schedule Window</small>
+                            <span class="text-dark small">
+                                <span th:text="${booking.formattedStart}">Start</span> &rarr;
+                                <span th:text="${booking.formattedEnd}">End</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Care Check-In Timeline -->
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-camera-fill text-primary me-1"></i> Care Check-In Timeline
+                                <span class="badge bg-secondary ms-1" th:text="${#lists.size(booking.checkins)}">0</span>
+                            </h6>
+                        </div>
+
+                        <!-- Check-In Stream -->
+                        <div th:if="${#lists.isEmpty(booking.checkins)}" class="text-muted small fst-italic p-2 bg-light rounded">
+                            No check-in updates logged yet for this booking.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(booking.checkins)}" class="vstack gap-2 mb-3">
+                            <div th:each="c : ${booking.checkins}" class="p-3 bg-light rounded border-start border-primary border-4">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-primary">
+                                        <i class="bi bi-clock me-1"></i><span th:text="${c.formattedTimestamp}">Timestamp</span>
+                                    </span>
+                                    <span class="badge bg-white text-muted border small">Log #<span th:text="${c.id}">1</span></span>
+                                </div>
+                                <div class="text-dark" th:text="${c.note}">Care update notes...</div>
+                            </div>
+                        </div>
+
+                        <!-- Post Check-In Form (for Sitters) -->
+                        <div th:if="${userRole == 'SITTER'}" class="mt-3 p-3 bg-light rounded border">
+                            <form th:action="@{'/bookings/' + ${booking.id} + '/checkins'}" method="post">
+                                <label class="form-label fw-bold text-dark small mb-1">
+                                    <i class="bi bi-pencil-square text-success me-1"></i> Post Real-Time Check-In Note:
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" name="note" class="form-control"
+                                           placeholder="e.g. Fed lunch, fresh water poured, walked 25 mins..." required>
+                                    <button class="btn btn-success fw-bold" type="submit">
+                                        <i class="bi bi-send-fill me-1"></i> Post Update
+                                    </button>
+                                </div>
+                                <div class="form-text small mt-1">Pet parents receive instant visibility into this care timeline.</div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>
+
