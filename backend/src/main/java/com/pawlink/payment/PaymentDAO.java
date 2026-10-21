@@ -9,11 +9,10 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -29,46 +28,40 @@ public class PaymentDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<Payment> paymentRowMapper = new RowMapper<>() {
-        @Override
-        public Payment mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Long id = rs.getLong("id");
-            Long bookingId = rs.getLong("booking_id");
-            BigDecimal amount = rs.getBigDecimal("amount");
-            String method = rs.getString("method");
-            String status = rs.getString("status");
-            Timestamp ts = rs.getTimestamp("created_at");
-            LocalDateTime createdAt = ts != null ? ts.toLocalDateTime() : null;
+    private final RowMapper<Payment> paymentRowMapper = (rs, rowNum) -> {
+        Long id = rs.getLong("id");
+        Long bookingId = rs.getLong("booking_id");
+        BigDecimal amount = rs.getBigDecimal("amount");
+        String method = rs.getString("method");
+        String status = rs.getString("status");
+        Timestamp ts = rs.getTimestamp("created_at");
+        LocalDateTime createdAt = ts != null ? ts.toLocalDateTime() : null;
 
-            return PaymentFactory.createPayment(id, bookingId, amount, method, status, createdAt);
-        }
+        return PaymentFactory.createPayment(id, bookingId, amount, method, status, createdAt);
     };
 
-    private final RowMapper<PaymentResponse> paymentResponseRowMapper = new RowMapper<>() {
-        @Override
-        public PaymentResponse mapRow(ResultSet rs, int rowNum) throws SQLException {
-            PaymentResponse resp = new PaymentResponse();
-            resp.setId(rs.getLong("id"));
-            resp.setBookingId(rs.getLong("booking_id"));
-            resp.setAmount(rs.getBigDecimal("amount"));
-            resp.setMethod(rs.getString("method"));
-            resp.setStatus(rs.getString("status"));
+    private final RowMapper<PaymentResponse> paymentResponseRowMapper = (rs, rowNum) -> {
+        PaymentResponse resp = new PaymentResponse();
+        resp.setId(rs.getLong("id"));
+        resp.setBookingId(rs.getLong("booking_id"));
+        resp.setAmount(rs.getBigDecimal("amount"));
+        resp.setMethod(rs.getString("method"));
+        resp.setStatus(rs.getString("status"));
 
-            Timestamp ts = rs.getTimestamp("created_at");
-            resp.setCreatedAt(ts != null ? ts.toLocalDateTime() : null);
+        Timestamp ts = rs.getTimestamp("created_at");
+        resp.setCreatedAt(ts != null ? ts.toLocalDateTime() : null);
 
-            resp.setOwnerId(rs.getLong("owner_id"));
-            resp.setPetName(rs.getString("pet_name"));
-            resp.setSitterName(rs.getString("sitter_name"));
+        resp.setOwnerId(rs.getLong("owner_id"));
+        resp.setPetName(rs.getString("pet_name"));
+        resp.setSitterName(rs.getString("sitter_name"));
 
-            Timestamp startTs = rs.getTimestamp("start_time");
-            resp.setStartTime(startTs != null ? startTs.toLocalDateTime() : null);
+        Timestamp startTs = rs.getTimestamp("start_time");
+        resp.setStartTime(startTs != null ? startTs.toLocalDateTime() : null);
 
-            Timestamp endTs = rs.getTimestamp("end_time");
-            resp.setEndTime(endTs != null ? endTs.toLocalDateTime() : null);
+        Timestamp endTs = rs.getTimestamp("end_time");
+        resp.setEndTime(endTs != null ? endTs.toLocalDateTime() : null);
 
-            return resp;
-        }
+        return resp;
     };
 
     /**
@@ -170,10 +163,11 @@ public class PaymentDAO {
 
     private Long extractGeneratedId(KeyHolder keyHolder) {
         if (keyHolder == null) return null;
-        if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {
-            Object idVal = keyHolder.getKeys().get("id");
+        Map<String, Object> keys = keyHolder.getKeys();
+        if (keys != null && !keys.isEmpty()) {
+            Object idVal = keys.get("id");
             if (idVal == null) {
-                idVal = keyHolder.getKeys().get("ID");
+                idVal = keys.get("ID");
             }
             if (idVal instanceof Number num) {
                 return num.longValue();

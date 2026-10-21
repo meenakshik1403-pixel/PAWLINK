@@ -4,7 +4,6 @@ import com.pawlink.common.exception.ResourceNotFoundException;
 import com.pawlink.reminder.dto.ReminderRequest;
 import com.pawlink.reminder.dto.ReminderResponse;
 import com.pawlink.reminder.dto.ReminderRunResponse;
-import com.pawlink.user.User;
 import com.pawlink.user.UserDAO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -122,7 +121,17 @@ public class ReminderController {
             throw new IllegalArgumentException("Due date is required.");
         }
 
-        Reminder reminder = new Reminder(req.getPetId(), req.getType().trim().toUpperCase(), req.getDueDate());
+        String type = req.getType().trim().toUpperCase();
+
+        // Idempotency check: reuse existing reminder if already scheduled for same pet, type, and date
+        List<Reminder> existingList = reminderDAO.findByPetId(req.getPetId());
+        for (Reminder existing : existingList) {
+            if (type.equalsIgnoreCase(existing.getType()) && req.getDueDate().equals(existing.getDueDate())) {
+                return ResponseEntity.ok(ReminderResponse.from(existing));
+            }
+        }
+
+        Reminder reminder = new Reminder(req.getPetId(), type, req.getDueDate());
         Long generatedId = reminderDAO.insert(reminder);
 
         Reminder saved = reminderDAO.findById(generatedId).orElse(reminder);

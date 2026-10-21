@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pawlink.pet.PetDAO;
 import com.pawlink.pet.PetFactory;
 import com.pawlink.sitter.SitterDAO;
-import com.pawlink.sitter.SittingBookingDAO;
 import com.pawlink.sitter.dto.BookingRequest;
 import com.pawlink.user.UserDAO;
 import com.pawlink.user.UserFactory;
@@ -47,9 +46,6 @@ public class PaymentControllerTest {
 
     @Autowired
     private SitterDAO sitterDAO;
-
-    @Autowired
-    private SittingBookingDAO sittingBookingDAO;
 
     @Autowired
     private PaymentDAO paymentDAO;
@@ -145,7 +141,8 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("Transactional Integrity: Unsupported payment method fails and rolls back booking creation")
     void testTransactionalRollbackOnPaymentFailure() throws Exception {
-        int initialBookingCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sitter_bookings", Integer.class);
+        Integer initialCountObj = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sitter_bookings", Integer.class);
+        int initialBookingCount = initialCountObj != null ? initialCountObj : 0;
 
         BookingRequest req = new BookingRequest(
                 petId,
@@ -161,7 +158,8 @@ public class PaymentControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());
 
-        int finalBookingCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sitter_bookings", Integer.class);
+        Integer finalCountObj = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sitter_bookings", Integer.class);
+        int finalBookingCount = finalCountObj != null ? finalCountObj : 0;
         assertEquals(initialBookingCount, finalBookingCount, "No booking row should exist when payment processing fails!");
     }
 }

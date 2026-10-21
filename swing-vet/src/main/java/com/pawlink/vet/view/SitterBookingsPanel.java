@@ -5,11 +5,13 @@ import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
 import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.SittingBookingDTO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -17,9 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Panel for managing Sitter Bookings, assigned jobs, and tracking check-ins.
+ * Modernized Panel for managing Sitter Bookings, assigned jobs, and tracking check-ins.
  * Adaptive: Displays sitter's assigned jobs or owner's booked sitters based on logged-in role.
- * Includes Cancel Booking and End Session (Release Payment) workflows for Pet Owners.
+ * Includes Cancel Booking and End Session (Release Payment) workflows with modern vector styling.
  */
 public class SitterBookingsPanel extends BasePanel {
 
@@ -28,12 +30,16 @@ public class SitterBookingsPanel extends BasePanel {
     private final JLabel statusCountLabel;
     private List<SittingBookingDTO> bookingList = new ArrayList<>();
 
-    // Owner Actions
+    // Actions
+    private JButton checkinBtn;
+    private JButton timelineBtn;
     private JButton cancelBtn;
     private JButton endSessionBtn;
 
     public SitterBookingsPanel() {
         super(getAdaptiveTitle(), getAdaptiveSubtitle());
+        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
+        setHeaderColor(PawTheme.SUNNY_TEXT);
 
         String[] columns = {"Booking #", "Pet Name", "Owner", "Sitter", "Start Time", "End Time", "Status", "Total Fee", "Escrow Status"};
         this.tableModel = new BaseTableModel<>(columns) {
@@ -64,75 +70,38 @@ public class SitterBookingsPanel extends BasePanel {
     private static String getAdaptiveTitle() {
         Session session = Session.getInstance();
         if (session.isOwner()) {
-            return "🐾 My Booked Pet Sitters";
+            return "My Booked Pet Sitters";
         }
-        return "📋 Sitter Bookings & Jobs";
+        return "Sitter Bookings & Jobs";
     }
 
     private static String getAdaptiveSubtitle() {
         Session session = Session.getInstance();
         if (session.isOwner()) {
-            return "Track active and past sitting sessions, inspect care updates, cancel bookings or end session to release payment.";
+            return "Track sitting sessions, inspect real-time care updates, and release escrow payment.";
         }
         return "View scheduled sitting appointments, monitor escrow status, and log pet care updates.";
     }
 
     private void setupUI() {
-        table.setRowHeight(36);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setShowGrid(true);
-        table.setGridColor(new Color(241, 245, 249));
+        PawTheme.styleTable(table);
 
-        // Renderer for Status Column (index 6)
-        table.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int col) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, col);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                String val = String.valueOf(value);
-                if ("CONFIRMED".equalsIgnoreCase(val)) {
-                    label.setText("✓ Confirmed");
-                    label.setForeground(new Color(16, 185, 129));
-                    label.setFont(label.getFont().deriveFont(Font.BOLD));
-                } else if ("COMPLETED".equalsIgnoreCase(val)) {
-                    label.setText("★ Completed");
-                    label.setForeground(new Color(59, 130, 246));
-                    label.setFont(label.getFont().deriveFont(Font.PLAIN));
-                } else if ("CANCELLED".equalsIgnoreCase(val)) {
-                    label.setText("✗ Cancelled");
-                    label.setForeground(new Color(239, 68, 68));
-                    label.setFont(label.getFont().deriveFont(Font.PLAIN));
-                }
-                return label;
-            }
-        });
+        // Modern Pill Renderers for Status (Col 6) and Escrow (Col 8)
+        table.getColumnModel().getColumn(6).setCellRenderer(new PawComponents.StatusTableCellRenderer());
+        table.getColumnModel().getColumn(8).setCellRenderer(new PawComponents.StatusTableCellRenderer());
 
-        // Renderer for Escrow Status Column (index 8)
-        table.getColumnModel().getColumn(8).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int col) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, col);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                String val = String.valueOf(value);
-                if ("HELD".equalsIgnoreCase(val)) {
-                    label.setText("🔒 Escrow HELD");
-                    label.setForeground(new Color(217, 119, 6)); // Amber
-                } else if ("RELEASED".equalsIgnoreCase(val)) {
-                    label.setText("✓ Escrow Released");
-                    label.setForeground(new Color(16, 185, 129));
-                } else if ("REFUNDED".equalsIgnoreCase(val)) {
-                    label.setText("↩ Refunded");
-                    label.setForeground(new Color(100, 116, 139));
-                }
-                return label;
-            }
-        });
+        table.getColumnModel().getColumn(0).setPreferredWidth(75);
+        table.getColumnModel().getColumn(0).setMaxWidth(90);
+        table.getColumnModel().getColumn(1).setPreferredWidth(110);
+        table.getColumnModel().getColumn(2).setPreferredWidth(120);
+        table.getColumnModel().getColumn(3).setPreferredWidth(120);
+        table.getColumnModel().getColumn(4).setPreferredWidth(135);
+        table.getColumnModel().getColumn(5).setPreferredWidth(135);
+        table.getColumnModel().getColumn(6).setPreferredWidth(110);
+        table.getColumnModel().getColumn(7).setPreferredWidth(95);
+        table.getColumnModel().getColumn(8).setPreferredWidth(110);
 
-        // Selection Listener to update button states
+        // Selection Listener to update action buttons dynamically
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 updateActionButtonsState();
@@ -149,89 +118,78 @@ public class SitterBookingsPanel extends BasePanel {
             }
         });
 
-        // Header Accessory
-        JPanel accessoryPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        // Header Accessory: Refresh and View Timeline (and Log Check-In for Sitter)
+        JPanel accessoryPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         accessoryPanel.setOpaque(false);
 
-        JButton refreshBtn = new JButton("🔄 Refresh");
-        refreshBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton refreshBtn = new PawComponents.PawButton("Refresh", PawIcons.refresh(14, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
         refreshBtn.addActionListener(e -> loadBookings());
         accessoryPanel.add(refreshBtn);
 
         Session session = Session.getInstance();
         if (session.isSitter()) {
-            JButton checkinBtn = new JButton("📸 Log Check-In");
-            checkinBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            checkinBtn.setBackground(new Color(16, 185, 129)); // Green
-            checkinBtn.setForeground(Color.WHITE);
-            checkinBtn.setFocusable(false);
+            checkinBtn = new PawComponents.PawButton("Log Check-In", PawIcons.clock(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
+            checkinBtn.setEnabled(false);
             checkinBtn.addActionListener(e -> openAddCheckinDialog());
             accessoryPanel.add(checkinBtn);
         }
 
-        JButton timelineBtn = new JButton("📋 View Timeline");
-        timelineBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        timelineBtn.setBackground(new Color(79, 70, 229)); // Indigo
-        timelineBtn.setForeground(Color.WHITE);
-        timelineBtn.setFocusable(false);
+        timelineBtn = new PawComponents.PawButton("View Timeline", PawIcons.eye(14, PawTheme.LILAC_TEXT), PawComponents.ButtonStyle.LILAC);
+        timelineBtn.setEnabled(false);
         timelineBtn.addActionListener(e -> openTimelineDialog());
         accessoryPanel.add(timelineBtn);
 
         if (session.isOwner()) {
-            cancelBtn = new JButton("❌ Cancel Booking");
-            cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            cancelBtn.setBackground(new Color(220, 38, 38)); // Red
-            cancelBtn.setForeground(Color.WHITE);
-            cancelBtn.setFocusable(false);
+            cancelBtn = new PawComponents.PawButton("Cancel Booking", PawIcons.cross(14, Color.WHITE), PawComponents.ButtonStyle.DANGER);
             cancelBtn.setEnabled(false);
             cancelBtn.addActionListener(e -> handleCancelBooking());
-            accessoryPanel.add(cancelBtn);
 
-            endSessionBtn = new JButton("🏁 End Session & Release Payment");
-            endSessionBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            endSessionBtn.setBackground(new Color(22, 163, 74)); // Green
-            endSessionBtn.setForeground(Color.WHITE);
-            endSessionBtn.setFocusable(false);
+            endSessionBtn = new PawComponents.PawButton("End Session & Release Payment", PawIcons.wallet(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
             endSessionBtn.setEnabled(false);
             endSessionBtn.addActionListener(e -> handleEndSession());
-            accessoryPanel.add(endSessionBtn);
         }
 
         setHeaderAccessory(accessoryPanel);
 
-        // Center Content
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 10));
-        centerPanel.setOpaque(false);
+        // Center Content: Scroll Pane inside cute PawCard + Bottom Bar
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240)));
-        centerPanel.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel bottomBar = new JPanel(new BorderLayout());
+        JPanel bottomBar = new JPanel(new BorderLayout(14, 0));
         bottomBar.setOpaque(false);
-        bottomBar.setBorder(new EmptyBorder(5, 5, 5, 5));
+        bottomBar.setBorder(new EmptyBorder(8, 6, 4, 6));
 
-        statusCountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        statusCountLabel.setForeground(new Color(100, 116, 139));
+        statusCountLabel.setFont(PawTheme.FONT_SUBTITLE);
+        statusCountLabel.setForeground(PawTheme.TEXT_MUTED);
         bottomBar.add(statusCountLabel, BorderLayout.WEST);
 
-        String tipText = session.isOwner()
-                ? "💡 Tip: When your pet sitting finishes, click 'End Session & Release Payment' to transfer escrow to the sitter."
-                : "💡 Tip: Select a booking and click 'Log Check-In' to update pet owners in real time.";
-        JLabel tip = new JLabel(tipText);
-        tip.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        tip.setForeground(new Color(148, 163, 184));
-        bottomBar.add(tip, BorderLayout.EAST);
+        if (session.isOwner()) {
+            JPanel ownerActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+            ownerActions.setOpaque(false);
+            ownerActions.add(cancelBtn);
+            ownerActions.add(endSessionBtn);
+            bottomBar.add(ownerActions, BorderLayout.EAST);
+        } else {
+            String tipText = "Tip: Select a booking and click 'Log Check-In' to update pet owners in real time.";
+            JLabel tip = new JLabel(tipText);
+            tip.setFont(PawTheme.FONT_SMALL);
+            tip.setForeground(PawTheme.TEXT_SUBTLE);
+            bottomBar.add(tip, BorderLayout.EAST);
+        }
 
-        centerPanel.add(bottomBar, BorderLayout.SOUTH);
-
-        setContent(centerPanel);
+        tableCard.add(bottomBar, BorderLayout.SOUTH);
+        setContent(tableCard);
     }
 
     private void updateActionButtonsState() {
-        if (cancelBtn == null && endSessionBtn == null) return;
         int row = table.getSelectedRow();
         if (row < 0) {
+            if (checkinBtn != null) checkinBtn.setEnabled(false);
+            if (timelineBtn != null) timelineBtn.setEnabled(false);
             if (cancelBtn != null) cancelBtn.setEnabled(false);
             if (endSessionBtn != null) endSessionBtn.setEnabled(false);
             return;
@@ -239,8 +197,25 @@ public class SitterBookingsPanel extends BasePanel {
 
         SittingBookingDTO booking = tableModel.getItem(row);
         boolean isConfirmed = booking != null && "CONFIRMED".equalsIgnoreCase(booking.getStatus());
-        if (cancelBtn != null) cancelBtn.setEnabled(isConfirmed);
-        if (endSessionBtn != null) endSessionBtn.setEnabled(isConfirmed);
+
+        if (checkinBtn != null) {
+            checkinBtn.setEnabled(isConfirmed);
+            checkinBtn.setToolTipText(isConfirmed ? "Log real-time care check-in" : "Check-in disabled: Booking status is " + (booking != null ? booking.getStatus() : "closed"));
+        }
+        if (timelineBtn != null) {
+            timelineBtn.setEnabled(true);
+        }
+        if (cancelBtn != null) {
+            cancelBtn.setEnabled(isConfirmed);
+        }
+        if (endSessionBtn != null) {
+            endSessionBtn.setEnabled(isConfirmed);
+        }
+    }
+
+    @Override
+    public void refresh() {
+        loadBookings();
     }
 
     public void loadBookings() {
@@ -269,6 +244,9 @@ public class SitterBookingsPanel extends BasePanel {
                     bookingList = get();
                     tableModel.setItems(bookingList);
                     statusCountLabel.setText("Found " + bookingList.size() + " booking(s).");
+                    if (!bookingList.isEmpty() && table.getSelectedRow() < 0) {
+                        table.setRowSelectionInterval(0, 0);
+                    }
                     updateActionButtonsState();
                 } catch (Exception ex) {
                     showError("Failed to fetch bookings: " + ex.getMessage());
@@ -363,6 +341,10 @@ public class SitterBookingsPanel extends BasePanel {
 
         SittingBookingDTO booking = tableModel.getItem(row);
         if (booking == null) return;
+        if (!"CONFIRMED".equalsIgnoreCase(booking.getStatus())) {
+            Dialogs.showWarning(this, "Check-in notes can only be posted for active 'CONFIRMED' bookings. This booking is already " + booking.getStatus() + ".");
+            return;
+        }
 
         Frame parent = (Frame) SwingUtilities.getWindowAncestor(this);
         AddCheckinDialog dialog = new AddCheckinDialog(parent, booking.getId(), booking.getPetName(), this::loadBookings);

@@ -2,13 +2,16 @@ package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.Session;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawDatePicker;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.PetDTO;
 import com.pawlink.vet.model.ReminderDTO;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -17,16 +20,17 @@ import java.util.Map;
 
 /**
  * Modal dialog to schedule a new pet care reminder (Medication, Vaccination, Checkup).
+ * Modernized with pure Java2D vector icons, FlatLaf styling, and micro-animated buttons.
  */
 public class CreateReminderDialog extends JDialog {
 
     private final JComboBox<String> petComboBox;
     private final Map<Integer, Long> petIndexToId = new HashMap<>();
     private final JComboBox<String> typeComboBox;
-    private final JTextField dueDateField;
+    private final PawDatePicker dueDateField;
 
-    private final JButton submitButton;
-    private final JButton cancelButton;
+    private final PawComponents.PawButton submitButton;
+    private final PawComponents.PawButton cancelButton;
     private final Runnable onSuccess;
     private final Long preselectedPetId;
 
@@ -35,93 +39,98 @@ public class CreateReminderDialog extends JDialog {
     }
 
     public CreateReminderDialog(Frame parent, Long preselectedPetId, Runnable onSuccess) {
-        super(parent, "➕ Schedule Pet Care Reminder", true);
+        super(parent, "Schedule Pet Care Reminder", true);
         this.onSuccess = onSuccess;
         this.preselectedPetId = preselectedPetId;
 
-        setSize(480, 380);
+        setSize(520, 450);
         setLocationRelativeTo(parent);
         setResizable(false);
         setLayout(new BorderLayout());
 
         // Header
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(new Color(30, 41, 59));
-        header.setBorder(new EmptyBorder(16, 20, 16, 20));
+        JPanel header = new JPanel(new BorderLayout(14, 0));
+        header.setBackground(PawTheme.SIDEBAR_BG);
+        header.setBorder(new EmptyBorder(18, 24, 18, 24));
+
+        JLabel iconLabel = new JLabel(PawIcons.bell(26, PawTheme.SUNNY));
+        header.add(iconLabel, BorderLayout.WEST);
+
+        JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 4));
+        titleBlock.setOpaque(false);
 
         JLabel titleLabel = new JLabel("Schedule Pet Care Reminder");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setFont(PawTheme.FONT_TITLE);
         titleLabel.setForeground(Color.WHITE);
+        titleBlock.add(titleLabel);
 
         JLabel subLabel = new JLabel("Configure reminders for upcoming medications, vaccinations, or wellness checkups");
-        subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subLabel.setForeground(new Color(148, 163, 184));
+        subLabel.setFont(PawTheme.FONT_SMALL);
+        subLabel.setForeground(PawTheme.TEXT_SUBTLE);
+        titleBlock.add(subLabel);
 
-        header.add(titleLabel, BorderLayout.NORTH);
-        header.add(subLabel, BorderLayout.SOUTH);
+        header.add(titleBlock, BorderLayout.CENTER);
         add(header, BorderLayout.NORTH);
 
         // Form Fields
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(new EmptyBorder(20, 24, 20, 24));
-        form.setBackground(new Color(248, 250, 252));
+        form.setBorder(new EmptyBorder(22, 28, 22, 28));
+        form.setBackground(PawTheme.CANVAS);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(8, 6, 8, 6);
+        gbc.insets = new Insets(10, 8, 10, 8);
 
         // 1. Pet Selection
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.32;
         JLabel petLabel = new JLabel("Select Pet *:");
-        petLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        petLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        petLabel.setForeground(PawTheme.TEXT_BODY);
         form.add(petLabel, gbc);
 
-        gbc.gridx = 1; gbc.weightx = 0.7;
+        gbc.gridx = 1; gbc.weightx = 0.68;
         petComboBox = new JComboBox<>();
-        petComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        petComboBox.setFont(PawTheme.FONT_BODY);
+        petComboBox.setPreferredSize(new Dimension(petComboBox.getPreferredSize().width, 38));
         form.add(petComboBox, gbc);
 
         // 2. Reminder Type
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 1;
         JLabel typeLabel = new JLabel("Reminder Type *:");
-        typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        typeLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        typeLabel.setForeground(PawTheme.TEXT_BODY);
         form.add(typeLabel, gbc);
 
-        gbc.gridx = 1; gbc.weightx = 0.7;
+        gbc.gridx = 1;
         typeComboBox = new JComboBox<>(new String[]{"MEDICATION", "VACCINATION", "CHECKUP"});
-        typeComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        typeComboBox.setFont(PawTheme.FONT_BODY);
+        typeComboBox.setPreferredSize(new Dimension(typeComboBox.getPreferredSize().width, 38));
         form.add(typeComboBox, gbc);
 
         // 3. Due Date
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
+        gbc.gridx = 0; gbc.gridy = 2;
         JLabel dateLabel = new JLabel("Due Date *:");
-        dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        dateLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        dateLabel.setForeground(PawTheme.TEXT_BODY);
         form.add(dateLabel, gbc);
 
-        gbc.gridx = 1; gbc.weightx = 0.7;
-        dueDateField = new JTextField(LocalDate.now().plusWeeks(2).toString());
-        dueDateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        gbc.gridx = 1;
+        dueDateField = new PawDatePicker(LocalDate.now(), PawTheme.SUNNY);
         form.add(dueDateField, gbc);
 
         add(form, BorderLayout.CENTER);
 
         // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
-        buttonPanel.setBackground(Color.WHITE);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 14));
+        buttonPanel.setBackground(PawTheme.SURFACE);
         buttonPanel.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(6, 12, 6, 12)
+                BorderFactory.createMatteBorder(1, 0, 0, 0, PawTheme.BORDER_LIGHT),
+                new EmptyBorder(8, 20, 10, 20)
         ));
 
-        cancelButton = new JButton("Cancel");
-        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cancelButton = new PawComponents.PawButton("Cancel", PawComponents.ButtonStyle.SECONDARY);
         cancelButton.addActionListener(e -> dispose());
 
-        submitButton = new JButton("Create Reminder");
-        submitButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        submitButton.setBackground(new Color(13, 148, 136));
-        submitButton.setForeground(Color.WHITE);
-        submitButton.setFocusPainted(false);
-        submitButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        submitButton = new PawComponents.PawButton("Schedule Reminder", PawIcons.bell(14, PawTheme.SUNNY_TEXT), PawComponents.ButtonStyle.SUNNY);
         submitButton.addActionListener(e -> submitForm());
 
         buttonPanel.add(cancelButton);
@@ -183,12 +192,9 @@ public class CreateReminderDialog extends JDialog {
             return;
         }
 
-        String dateStr = dueDateField.getText().trim();
-        LocalDate dueDate;
-        try {
-            dueDate = LocalDate.parse(dateStr);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+        LocalDate dueDate = dueDateField.getDate();
+        if (dueDate == null) {
+            JOptionPane.showMessageDialog(this, "Please select a due date (YYYY-MM-DD).", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -211,7 +217,7 @@ public class CreateReminderDialog extends JDialog {
             @Override
             protected void done() {
                 submitButton.setEnabled(true);
-                submitButton.setText("Create Reminder");
+                submitButton.setText("Schedule Reminder");
                 try {
                     ReminderDTO created = get();
                     JOptionPane.showMessageDialog(

@@ -1,5 +1,5 @@
 {
-  "name": "PawLink (Java 21, Swing, Spring Boot, Supabase CLI)",
+  "name": "PawLink (Java 25 LTS, Swing, Spring Boot, Supabase CLI)",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/PAWLINK",
@@ -30,7 +30,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "java.compile.nullAnalysis.mode": "automatic",
+        "java.compile.nullAnalysis.mode": "disabled",
         "java.configuration.updateBuildConfiguration": "automatic",
         "java.import.maven.enabled": true,
         "maven.terminal.useJavaHome": true,

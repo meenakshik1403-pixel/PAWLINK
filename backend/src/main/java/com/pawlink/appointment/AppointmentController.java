@@ -3,13 +3,11 @@ package com.pawlink.appointment;
 import com.pawlink.appointment.dto.AppointmentRequest;
 import com.pawlink.appointment.dto.AppointmentResponse;
 import com.pawlink.appointment.dto.StatusUpdateRequest;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 

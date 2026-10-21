@@ -15,7 +15,6 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,9 +24,6 @@ public class AppointmentServiceTest {
 
     @Autowired
     private AppointmentService appointmentService;
-
-    @Autowired
-    private AppointmentDAO appointmentDAO;
 
     @Autowired
     private UserDAO userDAO;

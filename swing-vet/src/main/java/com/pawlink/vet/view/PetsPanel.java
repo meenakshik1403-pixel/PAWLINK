@@ -3,12 +3,16 @@ package com.pawlink.vet.view;
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.PetDTO;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -16,97 +20,86 @@ import java.util.List;
 
 /**
  * Veterinary Patients / Pets Management Panel.
- * Extends BasePanel as per team architecture.
- *
- * Features:
- * 1. Top search bar with JTextField and 'Search' JButton (queries pet name or owner ID).
- * 2. Center JTable showing Pet ID, Name, Species, DOB, Owner ID.
- * 3. Bottom detail card dynamically displaying the polymorphic care guidelines
- *    when a table row is selected.
+ * Modernized with pure Java2D vector icons, crisp typography, and responsive detail cards.
  */
 public class PetsPanel extends BasePanel {
 
     private final JTextField searchField;
-    private final JButton searchButton;
-    private final JButton refreshButton;
+    private final PawComponents.PawButton searchButton;
+    private final PawComponents.PawButton refreshButton;
 
     private final PetTableModel tableModel;
     private final JTable petTable;
 
     // Bottom Care Guidelines Detail Card Components
     private final JLabel petHeaderLabel;
-    private final JLabel speciesBadgeLabel;
+    private final JLabel petIconHolder;
+    private final PawComponents.StatusPill speciesPill;
     private final JTextArea guidelinesTextArea;
     private final JLabel metadataLabel;
 
     public PetsPanel() {
-        super("🐕 Patients / Pet Directory", "Search patient records and review polymorphic species care guidelines");
+        super("Patients & Pet Directory", "Search patient records and review polymorphic species care guidelines");
+
+        setHeaderIcon(PawIcons.paw(26, PawTheme.CORAL));
+        setHeaderColor(PawTheme.CORAL_TEXT);
 
         // 1. Initialize Table Model & Table
         tableModel = new PetTableModel();
         petTable = new JTable(tableModel);
-        setupTableAppearance();
+        PawTheme.styleTable(petTable);
+        setupTableRenderers();
 
         // 2. Top Search Controls
-        searchField = new JTextField(20);
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        searchField = new JTextField(22);
+        PawTheme.styleField(searchField);
         searchField.setToolTipText("Search by pet name or owner ID...");
 
-        searchButton = new JButton("Search");
-        searchButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        searchButton.setBackground(new Color(13, 148, 136)); // Teal accent
-        searchButton.setForeground(Color.WHITE);
-        searchButton.setFocusPainted(false);
-        searchButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        refreshButton = new JButton("Show All");
-        refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        refreshButton.setBackground(new Color(226, 232, 240));
-        refreshButton.setForeground(new Color(30, 41, 59));
-        refreshButton.setFocusPainted(false);
-        refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        searchButton = new PawComponents.PawButton("Search", PawIcons.search(14, Color.WHITE), PawComponents.ButtonStyle.CORAL);
+        refreshButton = new PawComponents.PawButton("Show All", PawIcons.refresh(13, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
 
         JPanel searchBarPanel = createSearchBar();
 
         // 3. Bottom Detail Card
+        petIconHolder = new JLabel(PawIcons.paw(22, PawTheme.CORAL));
         petHeaderLabel = new JLabel("Select a patient to inspect clinical care guidelines");
-        petHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        petHeaderLabel.setForeground(new Color(30, 41, 59));
+        petHeaderLabel.setFont(PawTheme.FONT_SECTION);
+        petHeaderLabel.setForeground(PawTheme.TEXT_TITLE);
 
-        speciesBadgeLabel = new JLabel();
-        speciesBadgeLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        speciesBadgeLabel.setOpaque(true);
-        speciesBadgeLabel.setBorder(new EmptyBorder(3, 8, 3, 8));
-        speciesBadgeLabel.setVisible(false);
+        speciesPill = new PawComponents.StatusPill("", PawTheme.SURFACE_MUTED, PawTheme.TEXT_MUTED, PawTheme.TEXT_MUTED);
+        speciesPill.setVisible(false);
 
         metadataLabel = new JLabel(" ");
-        metadataLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        metadataLabel.setForeground(new Color(100, 116, 139));
+        metadataLabel.setFont(PawTheme.FONT_BODY);
+        metadataLabel.setForeground(PawTheme.TEXT_MUTED);
 
-        guidelinesTextArea = new JTextArea(3, 40);
+        guidelinesTextArea = new JTextArea(4, 40);
         guidelinesTextArea.setEditable(false);
         guidelinesTextArea.setLineWrap(true);
         guidelinesTextArea.setWrapStyleWord(true);
-        guidelinesTextArea.setFont(new Font("Segoe UI", Font.ITALIC, 13));
-        guidelinesTextArea.setForeground(new Color(15, 23, 42));
-        guidelinesTextArea.setBackground(new Color(241, 245, 249));
+        guidelinesTextArea.setFont(PawTheme.FONT_BODY);
+        guidelinesTextArea.setForeground(PawTheme.TEXT_TITLE);
+        guidelinesTextArea.setBackground(PawTheme.SURFACE);
         guidelinesTextArea.setBorder(new CompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(10, 12, 10, 12)
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(12, 14, 12, 14)
         ));
 
         JPanel detailCard = createDetailCard();
 
-        // 4. Assemble Layout into Content Panel
-        JPanel mainContent = new JPanel(new BorderLayout(0, 12));
-        mainContent.setOpaque(false);
-        mainContent.add(searchBarPanel, BorderLayout.NORTH);
+        // 4. Assemble Layout into Content Panel inside PawCard
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
 
         JScrollPane scrollPane = new JScrollPane(petTable);
-        scrollPane.setBorder(new LineBorder(new Color(226, 232, 240), 1, true));
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        mainContent.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        scrollPane.getViewport().setBackground(PawTheme.SURFACE);
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
+        JPanel mainContent = new JPanel(new BorderLayout(0, 14));
+        mainContent.setOpaque(false);
+        mainContent.add(searchBarPanel, BorderLayout.NORTH);
+        mainContent.add(tableCard, BorderLayout.CENTER);
         mainContent.add(detailCard, BorderLayout.SOUTH);
 
         setContent(mainContent);
@@ -130,17 +123,17 @@ public class PetsPanel extends BasePanel {
     }
 
     private JPanel createSearchBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         bar.setOpaque(true);
-        bar.setBackground(Color.WHITE);
+        bar.setBackground(PawTheme.SURFACE);
         bar.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(6, 12, 6, 12)
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(6, 14, 6, 14)
         ));
 
-        JLabel iconLabel = new JLabel("🔍 Search Patients:");
-        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        iconLabel.setForeground(new Color(51, 65, 85));
+        JLabel iconLabel = new JLabel("Patient Search:");
+        iconLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        iconLabel.setForeground(PawTheme.TEXT_BODY);
         bar.add(iconLabel);
 
         bar.add(searchField);
@@ -151,21 +144,19 @@ public class PetsPanel extends BasePanel {
     }
 
     private JPanel createDetailCard() {
-        JPanel card = new JPanel(new BorderLayout(10, 8));
-        card.setOpaque(true);
-        card.setBackground(Color.WHITE);
-        card.setBorder(new CompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(14, 16, 14, 16)
-        ));
+        PawComponents.PawCard card = new PawComponents.PawCard(14);
+        card.setBackgroundTint(PawTheme.PEACH_LIGHT);
+        card.setBorderTint(PawTheme.PEACH);
+        card.setLayout(new BorderLayout(14, 12));
 
-        JPanel topInfo = new JPanel(new BorderLayout(8, 4));
+        JPanel topInfo = new JPanel(new BorderLayout(8, 6));
         topInfo.setOpaque(false);
 
-        JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         leftHeader.setOpaque(false);
+        leftHeader.add(petIconHolder);
         leftHeader.add(petHeaderLabel);
-        leftHeader.add(speciesBadgeLabel);
+        leftHeader.add(speciesPill);
 
         topInfo.add(leftHeader, BorderLayout.NORTH);
         topInfo.add(metadataLabel, BorderLayout.SOUTH);
@@ -176,16 +167,37 @@ public class PetsPanel extends BasePanel {
         return card;
     }
 
-    private void setupTableAppearance() {
-        petTable.setRowHeight(32);
-        petTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        petTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        petTable.setGridColor(new Color(241, 245, 249));
-        petTable.setSelectionBackground(new Color(204, 251, 241)); // Light teal highlight
-        petTable.setSelectionForeground(new Color(15, 23, 42));
-        petTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        petTable.getTableHeader().setBackground(new Color(248, 250, 252));
-        petTable.getTableHeader().setForeground(new Color(71, 85, 105));
+    private void setupTableRenderers() {
+        // Species Column (Index 2) Pill Renderer using PawComponents.StatusPill.forSpecies
+        petTable.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus, int row, int column) {
+                String sp = value != null ? value.toString() : "UNKNOWN";
+                PawComponents.StatusPill pill = PawComponents.StatusPill.forSpecies(sp);
+
+                JPanel holder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+                holder.setOpaque(isSelected);
+                if (isSelected) {
+                    holder.setBackground(table.getSelectionBackground());
+                } else {
+                    holder.setBackground(row % 2 == 0 ? PawTheme.SURFACE : new Color(250, 250, 252));
+                }
+                holder.add(pill);
+                return holder;
+            }
+        });
+
+        petTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+        petTable.getColumnModel().getColumn(1).setPreferredWidth(160);
+        petTable.getColumnModel().getColumn(2).setPreferredWidth(130);
+        petTable.getColumnModel().getColumn(3).setPreferredWidth(130);
+        petTable.getColumnModel().getColumn(4).setPreferredWidth(100);
+    }
+
+    @Override
+    public void refresh() {
+        loadPets(null);
     }
 
     private void performSearch() {
@@ -240,25 +252,16 @@ public class PetsPanel extends BasePanel {
         PetDTO pet = tableModel.getItem(selectedRow);
         if (pet == null) return;
 
-        String icon = switch (pet.getSpecies() != null ? pet.getSpecies().toUpperCase() : "") {
-            case "DOG" -> "🐶";
-            case "CAT" -> "🐱";
-            case "BIRD" -> "🦜";
-            case "REPTILE" -> "🦎";
-            default -> "🐾";
-        };
+        petIconHolder.setIcon(PawIcons.paw(22, PawTheme.PRIMARY));
+        petHeaderLabel.setText(pet.getName());
 
-        petHeaderLabel.setText(icon + " " + pet.getName());
-        speciesBadgeLabel.setText(" " + (pet.getSpecies() != null ? pet.getSpecies().toUpperCase() : "UNKNOWN") + " ");
-        speciesBadgeLabel.setBackground(getSpeciesColor(pet.getSpecies()));
-        speciesBadgeLabel.setForeground(Color.WHITE);
-        speciesBadgeLabel.setVisible(true);
+        speciesPill.setVisible(true);
 
-        metadataLabel.setText("Patient ID: #" + pet.getId() + "  |  Owner ID: #" + pet.getOwnerId() + "  |  Date of Birth: " + (pet.getDob() != null ? pet.getDob() : "N/A"));
+        metadataLabel.setText("Patient ID: #" + pet.getId() + "  |  Owner ID: #" + pet.getOwnerId() + "  |  DOB: " + (pet.getDob() != null ? pet.getDob() : "N/A"));
 
         String guidelines = pet.getCareGuidelines();
         if (guidelines != null && !guidelines.isBlank()) {
-            guidelinesTextArea.setText("Species Care Guidelines:\n" + guidelines);
+            guidelinesTextArea.setText("Species Clinical Care Guidelines:\n" + guidelines);
         } else {
             guidelinesTextArea.setText("No specific care guidelines registered for this species.");
         }
@@ -266,20 +269,9 @@ public class PetsPanel extends BasePanel {
 
     private void clearDetailCard(String prompt) {
         petHeaderLabel.setText(prompt);
-        speciesBadgeLabel.setVisible(false);
+        speciesPill.setVisible(false);
         metadataLabel.setText(" ");
         guidelinesTextArea.setText("");
-    }
-
-    private Color getSpeciesColor(String species) {
-        if (species == null) return new Color(100, 116, 139);
-        return switch (species.toUpperCase()) {
-            case "DOG" -> new Color(37, 99, 235);    // Blue
-            case "CAT" -> new Color(147, 51, 234);   // Purple
-            case "BIRD" -> new Color(13, 148, 136);   // Teal
-            case "REPTILE" -> new Color(217, 119, 6); // Amber
-            default -> new Color(100, 116, 139);
-        };
     }
 
     /**

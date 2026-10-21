@@ -10,6 +10,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -62,16 +63,20 @@ public class PetDAO {
         }, keyHolder);
 
         Long generatedId = null;
-        if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {
-            Object idVal = keyHolder.getKeys().get("id");
+        Map<String, Object> keys = keyHolder.getKeys();
+        if (keys != null && !keys.isEmpty()) {
+            Object idVal = keys.get("id");
             if (idVal == null) {
-                idVal = keyHolder.getKeys().get("ID");
+                idVal = keys.get("ID");
             }
             if (idVal instanceof Number num) {
                 generatedId = num.longValue();
             }
-        } else if (keyHolder.getKey() != null) {
-            generatedId = keyHolder.getKey().longValue();
+        } else {
+            Number singleKey = keyHolder.getKey();
+            if (singleKey != null) {
+                generatedId = singleKey.longValue();
+            }
         }
 
         if (generatedId == null) {

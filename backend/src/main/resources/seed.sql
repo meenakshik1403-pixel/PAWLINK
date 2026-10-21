@@ -61,12 +61,22 @@ SELECT id, 'Bird', 'Tweety', '2023-01-10' FROM users WHERE email = 'owner.jane@p
   AND NOT EXISTS (SELECT 1 FROM pets p WHERE p.owner_id = users.id AND LOWER(p.name) = 'tweety');
 
 -- ---------------------------------------------------------------------
--- 4. [P5] SEED SAMPLE REMINDERS
+-- 4. [P5] SEED SAMPLE REMINDERS (Idempotent: Never insert duplicates)
 -- ---------------------------------------------------------------------
 INSERT INTO reminders (pet_id, type, due_date, sent)
-SELECT id, 'VACCINATION', CURRENT_DATE, FALSE FROM pets WHERE name = 'Buddy'
+SELECT id, 'VACCINATION', CURRENT_DATE, FALSE FROM pets
+WHERE name = 'Buddy'
+  AND NOT EXISTS (
+      SELECT 1 FROM reminders r
+      WHERE r.pet_id = pets.id AND r.type = 'VACCINATION' AND r.due_date = CURRENT_DATE
+  )
 LIMIT 1;
 
 INSERT INTO reminders (pet_id, type, due_date, sent)
-SELECT id, 'CHECKUP', CURRENT_DATE + INTERVAL '7 days', FALSE FROM pets WHERE name = 'Whiskers'
+SELECT id, 'CHECKUP', CURRENT_DATE + INTERVAL '7 days', FALSE FROM pets
+WHERE name = 'Whiskers'
+  AND NOT EXISTS (
+      SELECT 1 FROM reminders r
+      WHERE r.pet_id = pets.id AND r.type = 'CHECKUP' AND r.due_date = CURRENT_DATE + INTERVAL '7 days'
+  )
 LIMIT 1;

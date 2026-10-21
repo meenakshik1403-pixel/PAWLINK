@@ -26,9 +26,6 @@ public class PetServiceTest {
     private PetService petService;
 
     @Autowired
-    private PetDAO petDAO;
-
-    @Autowired
     private UserDAO userDAO;
 
     @Autowired

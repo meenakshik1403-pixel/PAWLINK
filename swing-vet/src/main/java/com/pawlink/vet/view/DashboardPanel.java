@@ -4,22 +4,25 @@ import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
-import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.AppointmentDTO;
 import com.pawlink.vet.model.ReminderDTO;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Veterinarian Overview Dashboard (Home Tab for VET in Swing Vet Client).
+ * Veterinarian Overview Dashboard.
  * Displays today's scheduled consultations and pending reminders count.
+ * Modernized with pure Java2D vector icons, high-contrast typography, and tactile buttons.
  */
 public class DashboardPanel extends BasePanel {
 
@@ -30,7 +33,10 @@ public class DashboardPanel extends BasePanel {
     private final JLabel lastUpdatedLabel;
 
     public DashboardPanel() {
-        super("📊 Veterinarian Overview Dashboard", "Real-time clinical summary of today's schedule, patient consultations, and alert notifications.");
+        super("Veterinarian Clinical Dashboard", "Real-time clinical summary of today's schedule, patient consultations, and alert notifications.");
+
+        setHeaderIcon(PawIcons.stethoscope(22, PawTheme.PRIMARY));
+        setHeaderColor(PawTheme.PRIMARY);
 
         String[] cols = {"Time Slot", "Patient / Pet", "Pet Owner", "Status"};
         this.tableModel = new BaseTableModel<>(cols) {
@@ -60,11 +66,7 @@ public class DashboardPanel extends BasePanel {
         JPanel headerAccessory = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         headerAccessory.setOpaque(false);
 
-        JButton refreshBtn = new JButton("🔄 Refresh Dashboard");
-        refreshBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        refreshBtn.setBackground(new Color(13, 148, 136)); // Teal
-        refreshBtn.setForeground(Color.WHITE);
-        refreshBtn.setFocusable(false);
+        PawComponents.PawButton refreshBtn = new PawComponents.PawButton("Refresh Dashboard", PawIcons.refresh(13, Color.WHITE), PawComponents.ButtonStyle.PRIMARY);
         refreshBtn.addActionListener(e -> refreshData());
         headerAccessory.add(refreshBtn);
 
@@ -78,75 +80,54 @@ public class DashboardPanel extends BasePanel {
         JPanel cardsGrid = new JPanel(new GridLayout(1, 2, 20, 0));
         cardsGrid.setOpaque(false);
 
-        // Card 1: Today's Appointments
+        // Card 1: Today's Appointments (Cute Sky Tint)
         JPanel appointmentsCard = createMetricCard(
-                "📅 Today's Scheduled Appointments",
+                "Today's Scheduled Consultations",
                 appointmentsCountLabel,
                 "Consultations scheduled for " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
-                new Color(37, 99, 235), // Blue accent
-                new Color(239, 246, 255)
+                PawIcons.calendar(24, PawTheme.SKY),
+                PawTheme.SKY,
+                PawTheme.SKY_LIGHT
         );
         cardsGrid.add(appointmentsCard);
 
-        // Card 2: Pending Reminders Due
+        // Card 2: Pending Reminders Due (Cute Honey Tint)
         JPanel remindersCard = createMetricCard(
-                "🔔 Pending Reminders Due",
+                "Pending Reminders Due",
                 remindersCountLabel,
                 "Unsent clinical vaccination & checkup alerts",
-                new Color(217, 119, 6), // Amber accent
-                new Color(254, 243, 199)
+                PawIcons.bell(24, PawTheme.SUNNY),
+                PawTheme.SUNNY,
+                PawTheme.SUNNY_LIGHT
         );
         cardsGrid.add(remindersCard);
 
         mainPanel.add(cardsGrid, BorderLayout.NORTH);
 
         // 2. Mini Appointments Table Section
-        JPanel tableSection = new JPanel(new BorderLayout(0, 8));
-        tableSection.setBackground(Color.WHITE);
-        tableSection.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(226, 232, 240)),
-                new EmptyBorder(14, 16, 14, 16)
-        ));
+        PawComponents.PawCard tableSection = new PawComponents.PawCard(16);
+        tableSection.setLayout(new BorderLayout(0, 12));
 
         JLabel tableTitle = new JLabel("Today's Patient Consultation Schedule");
-        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        tableTitle.setForeground(new Color(30, 41, 59));
+        tableTitle.setFont(PawTheme.FONT_SECTION);
+        tableTitle.setForeground(PawTheme.TEXT_TITLE);
         tableSection.add(tableTitle, BorderLayout.NORTH);
 
-        appointmentsTable.setRowHeight(36);
-        appointmentsTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        appointmentsTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        appointmentsTable.setShowGrid(true);
-        appointmentsTable.setGridColor(new Color(241, 245, 249));
+        PawTheme.styleTable(appointmentsTable);
 
         // Status Renderer
-        appointmentsTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int col) {
-                JLabel l = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, col);
-                l.setHorizontalAlignment(SwingConstants.CENTER);
-                String val = String.valueOf(value);
-                if ("CONFIRMED".equalsIgnoreCase(val)) {
-                    l.setText("✓ Confirmed");
-                    l.setForeground(new Color(16, 185, 129));
-                    l.setFont(l.getFont().deriveFont(Font.BOLD));
-                } else if ("COMPLETED".equalsIgnoreCase(val)) {
-                    l.setText("★ Completed");
-                    l.setForeground(new Color(59, 130, 246));
-                } else if ("CANCELLED".equalsIgnoreCase(val)) {
-                    l.setText("✗ Cancelled");
-                    l.setForeground(new Color(239, 68, 68));
-                } else {
-                    l.setText("⏳ " + val);
-                    l.setForeground(new Color(217, 119, 6));
-                }
-                return l;
-            }
-        });
+        appointmentsTable.getColumnModel().getColumn(3).setCellRenderer(new PawComponents.StatusTableCellRenderer());
+        appointmentsTable.getColumnModel().getColumn(0).setPreferredWidth(120);
+        appointmentsTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+        appointmentsTable.getColumnModel().getColumn(2).setPreferredWidth(180);
+        appointmentsTable.getColumnModel().getColumn(3).setPreferredWidth(120);
 
         JScrollPane scrollPane = new JScrollPane(appointmentsTable);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240)));
+        scrollPane.setBorder(new CompoundBorder(
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(0, 0, 0, 0)
+        ));
+        scrollPane.getViewport().setBackground(PawTheme.SURFACE);
         tableSection.add(scrollPane, BorderLayout.CENTER);
 
         mainPanel.add(tableSection, BorderLayout.CENTER);
@@ -154,13 +135,13 @@ public class DashboardPanel extends BasePanel {
         // 3. Bottom Status Bar
         JPanel bottomBar = new JPanel(new BorderLayout());
         bottomBar.setOpaque(false);
-        lastUpdatedLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lastUpdatedLabel.setForeground(new Color(100, 116, 139));
+        lastUpdatedLabel.setFont(PawTheme.FONT_BODY);
+        lastUpdatedLabel.setForeground(PawTheme.TEXT_MUTED);
         bottomBar.add(lastUpdatedLabel, BorderLayout.WEST);
 
-        JLabel tip = new JLabel("💡 PawLink Clinical Dashboard • Synchronized with port 8080");
-        tip.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        tip.setForeground(new Color(148, 163, 184));
+        JLabel tip = new JLabel("PawLink Clinical Dashboard • Secure Backend Connected");
+        tip.setFont(PawTheme.FONT_SMALL);
+        tip.setForeground(PawTheme.TEXT_SUBTLE);
         bottomBar.add(tip, BorderLayout.EAST);
 
         mainPanel.add(bottomBar, BorderLayout.SOUTH);
@@ -168,29 +149,32 @@ public class DashboardPanel extends BasePanel {
         setContent(mainPanel);
     }
 
-    private JPanel createMetricCard(String title, JLabel valueLabel, String subtitle, Color accentColor, Color bgLight) {
-        JPanel card = new JPanel(new BorderLayout(8, 8));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 5, 0, 0, accentColor),
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(226, 232, 240)),
-                        new EmptyBorder(16, 20, 16, 20)
-                )
-        ));
+    private JPanel createMetricCard(String title, JLabel valueLabel, String subtitle, Icon icon, Color accentColor, Color bgTint) {
+        PawComponents.PawCard card = new PawComponents.PawCard(16);
+        card.setCardBackground(bgTint);
+        card.setCardBorderColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 60));
+        card.setLayout(new BorderLayout(12, 10));
+
+        JPanel topRow = new JPanel(new BorderLayout());
+        topRow.setOpaque(false);
 
         JLabel titleLbl = new JLabel(title);
-        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        titleLbl.setForeground(new Color(71, 85, 105));
-        card.add(titleLbl, BorderLayout.NORTH);
+        titleLbl.setFont(PawTheme.FONT_BODY_BOLD);
+        titleLbl.setForeground(PawTheme.TEXT_MUTED);
+        topRow.add(titleLbl, BorderLayout.WEST);
+
+        if (icon != null) {
+            topRow.add(new JLabel(icon), BorderLayout.EAST);
+        }
+        card.add(topRow, BorderLayout.NORTH);
 
         valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
         valueLabel.setForeground(accentColor);
         card.add(valueLabel, BorderLayout.CENTER);
 
         JLabel subLbl = new JLabel(subtitle);
-        subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subLbl.setForeground(new Color(100, 116, 139));
+        subLbl.setFont(PawTheme.FONT_SMALL);
+        subLbl.setForeground(PawTheme.TEXT_MUTED);
         card.add(subLbl, BorderLayout.SOUTH);
 
         return card;
@@ -205,14 +189,13 @@ public class DashboardPanel extends BasePanel {
 
         lastUpdatedLabel.setText("Refreshing metrics...");
 
-        // 1. Fetch Today's Appointments: GET /api/appointments?vetId={id}&date=today
+        // 1. Fetch Today's Appointments
         SwingWorker<List<AppointmentDTO>, Void> apptWorker = new SwingWorker<>() {
             @Override
             protected List<AppointmentDTO> doInBackground() {
                 try {
                     return ApiClient.getInstance().getList("/api/appointments?vetId=" + vetId + "&date=today", AppointmentDTO.class);
                 } catch (Exception ex) {
-                    // Fallback to ISO date
                     String today = LocalDate.now().toString();
                     return ApiClient.getInstance().getList("/api/appointments?vetId=" + vetId + "&date=" + today, AppointmentDTO.class);
                 }
@@ -231,7 +214,7 @@ public class DashboardPanel extends BasePanel {
         };
         apptWorker.execute();
 
-        // 2. Fetch Due Reminders: GET /api/reminders?due=true
+        // 2. Fetch Due Reminders
         SwingWorker<List<ReminderDTO>, Void> reminderWorker = new SwingWorker<>() {
             @Override
             protected List<ReminderDTO> doInBackground() {
@@ -252,5 +235,9 @@ public class DashboardPanel extends BasePanel {
         };
         reminderWorker.execute();
     }
-}
 
+    @Override
+    public void refresh() {
+        refreshData();
+    }
+}

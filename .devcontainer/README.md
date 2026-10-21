@@ -14,7 +14,7 @@ This directory configures a fully isolated, cross-platform development container
 
 ## 🚀 Key Features
 
-1. **Pre-installed Java 21 & Maven:** All Java dependencies are pre-cached in a persistent Docker volume (`pawlink-m2-cache`), enabling fast and offline-capable builds.
+1. **Pre-installed Java 25 (JDK 25 LTS) & Maven:** All Java dependencies are pre-cached in a persistent Docker volume (`pawlink-m2-cache`), enabling fast and offline-capable builds targeting Java 25 LTS.
 2. **Cross-Platform:** Runs identically on **Windows** (Docker Desktop / WSL2), **macOS** (Apple Silicon M1/M2/M3/M4 or Intel), and **Linux**.
 3. **LAN Accessible:** Ports are bound to `0.0.0.0` so other laptops, phones, or tablets on your local network (Wi-Fi/LAN) can access the services using `http://<YOUR-HOST-IP>:<PORT>`.
 4. **Swing GUI in Browser (noVNC):** Run the Java Swing desktop application (`swing-vet`) inside the container and interact with it directly in your web browser at `http://localhost:6080` (password: `pawlink`).
@@ -78,7 +78,7 @@ The container comes with the official Supabase CLI pre-installed.
 
 You can use the interactive helper:
 ```bash
-./.devcontainer/scripts/supabase-cli-helper.sh
+./scripts/supabase-cli-helper.sh
 ```
 
 Or run Supabase commands directly:
@@ -104,13 +104,13 @@ Run these commands in the DevContainer integrated terminal:
 
 ### 1. Run Backend REST API
 ```bash
-./.devcontainer/scripts/run-backend.sh
+./scripts/run-backend.sh
 ```
 *API will be available at `http://localhost:8080` (or `http://<LAN_IP>:8080`).*
 
 ### 2. Run Swing Desktop Application
 ```bash
-./.devcontainer/scripts/run-swing.sh
+./scripts/run-swing.sh
 ```
 *Open `http://localhost:6080` in your web browser (desktop password: `pawlink`) to view and interact with the Swing GUI window!*
 

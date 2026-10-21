@@ -4,13 +4,14 @@ import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.PetDTO;
 import com.pawlink.vet.model.ReminderDTO;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -38,7 +39,9 @@ public class OwnerPetsPanel extends BasePanel {
     private final JButton addReminderQuickButton;
 
     public OwnerPetsPanel() {
-        super("🐶 My Pets & Care Schedule", "Manage your registered pets, view breed care guidelines, and monitor upcoming schedules ahead");
+        super("My Pets & Care Schedule", "Manage registered pets, review breed care guidelines, and monitor upcoming care schedules.");
+        setHeaderIcon(PawIcons.paw(24, PawTheme.CORAL));
+        setHeaderColor(PawTheme.CORAL_TEXT);
 
         // 1. Initialize Table Model
         tableModel = new PetTableModel();
@@ -46,29 +49,13 @@ public class OwnerPetsPanel extends BasePanel {
         setupTableAppearance();
 
         // 2. Action Buttons in Header Accessory
-        addPetButton = new JButton("+ Register New Pet");
-        addPetButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        addPetButton.setBackground(new Color(37, 99, 235)); // Royal Blue
-        addPetButton.setForeground(Color.WHITE);
-        addPetButton.setFocusPainted(false);
-        addPetButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        addPetButton = new PawComponents.PawButton("Register Pet", PawIcons.paw(15, Color.WHITE), PawComponents.ButtonStyle.CORAL);
+        refreshButton = new PawComponents.PawButton("Refresh", PawIcons.refresh(13, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
 
-        refreshButton = new JButton("Refresh");
-        refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        refreshButton.setBackground(new Color(226, 232, 240));
-        refreshButton.setForeground(new Color(30, 41, 59));
-        refreshButton.setFocusPainted(false);
-        refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        JButton historyButton = new JButton("📋 Medical & Vaccines");
-        historyButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        historyButton.setBackground(new Color(13, 148, 136)); // Teal
-        historyButton.setForeground(Color.WHITE);
-        historyButton.setFocusPainted(false);
-        historyButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        JButton historyButton = new PawComponents.PawButton("Medical History", PawIcons.medicalRecord(14, Color.WHITE), PawComponents.ButtonStyle.LILAC);
         historyButton.addActionListener(e -> openMedicalHistoryDialog());
 
-        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionsPanel.setOpaque(false);
         actionsPanel.add(refreshButton);
         actionsPanel.add(historyButton);
@@ -77,60 +64,55 @@ public class OwnerPetsPanel extends BasePanel {
 
         // 3. Bottom Detail Card Components
         petHeaderLabel = new JLabel("Select a pet to view care guidelines & schedule ahead");
-        petHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        petHeaderLabel.setForeground(new Color(30, 41, 59));
+        petHeaderLabel.setFont(PawTheme.FONT_SECTION);
+        petHeaderLabel.setForeground(PawTheme.TEXT_TITLE);
 
         speciesBadgeLabel = new JLabel();
-        speciesBadgeLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        speciesBadgeLabel.setFont(PawTheme.FONT_BADGE);
         speciesBadgeLabel.setOpaque(true);
-        speciesBadgeLabel.setBorder(new EmptyBorder(3, 8, 3, 8));
+        speciesBadgeLabel.setBorder(new EmptyBorder(4, 10, 4, 10));
         speciesBadgeLabel.setVisible(false);
 
         metadataLabel = new JLabel(" ");
-        metadataLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        metadataLabel.setForeground(new Color(100, 116, 139));
+        metadataLabel.setFont(PawTheme.FONT_BODY);
+        metadataLabel.setForeground(PawTheme.TEXT_MUTED);
 
-        guidelinesTextArea = new JTextArea(3, 25);
+        guidelinesTextArea = new JTextArea(4, 25);
         guidelinesTextArea.setEditable(false);
         guidelinesTextArea.setLineWrap(true);
         guidelinesTextArea.setWrapStyleWord(true);
-        guidelinesTextArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        guidelinesTextArea.setForeground(new Color(15, 23, 42));
-        guidelinesTextArea.setBackground(new Color(248, 250, 252));
-        guidelinesTextArea.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(8, 10, 8, 10)
-        ));
+        guidelinesTextArea.setFont(PawTheme.FONT_BODY);
+        guidelinesTextArea.setForeground(PawTheme.TEXT_BODY);
+        guidelinesTextArea.setBackground(new Color(250, 251, 254));
+        guidelinesTextArea.setBorder(new EmptyBorder(10, 12, 10, 12));
 
-        scheduleTextArea = new JTextArea(3, 25);
+        scheduleTextArea = new JTextArea(4, 25);
         scheduleTextArea.setEditable(false);
         scheduleTextArea.setLineWrap(true);
         scheduleTextArea.setWrapStyleWord(true);
-        scheduleTextArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        scheduleTextArea.setForeground(new Color(15, 23, 42));
-        scheduleTextArea.setBackground(new Color(248, 250, 252));
-        scheduleTextArea.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(8, 10, 8, 10)
-        ));
+        scheduleTextArea.setFont(PawTheme.FONT_BODY);
+        scheduleTextArea.setForeground(PawTheme.TEXT_BODY);
+        scheduleTextArea.setBackground(new Color(254, 252, 248));
+        scheduleTextArea.setBorder(new EmptyBorder(10, 12, 10, 12));
 
-        addReminderQuickButton = new JButton("+ Add Reminder");
-        addReminderQuickButton.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        addReminderQuickButton.setMargin(new Insets(2, 6, 2, 6));
+        addReminderQuickButton = new PawComponents.PawButton("Add Reminder", PawIcons.bell(13, Color.WHITE), PawComponents.ButtonStyle.SUNNY);
         addReminderQuickButton.setFocusable(false);
         addReminderQuickButton.addActionListener(e -> openAddReminderDialog());
 
         JPanel detailCard = createDetailCard();
 
-        // 4. Assemble Center Content
-        JPanel mainContent = new JPanel(new BorderLayout(0, 12));
-        mainContent.setOpaque(false);
+        // 4. Assemble Center Content inside PawCard
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
 
         JScrollPane scrollPane = new JScrollPane(petTable);
-        scrollPane.setBorder(new LineBorder(new Color(226, 232, 240), 1, true));
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        mainContent.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        scrollPane.getViewport().setBackground(PawTheme.SURFACE);
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
+        JPanel mainContent = new JPanel(new BorderLayout(0, 16));
+        mainContent.setOpaque(false);
+        mainContent.add(tableCard, BorderLayout.CENTER);
         mainContent.add(detailCard, BorderLayout.SOUTH);
 
         setContent(mainContent);
@@ -150,19 +132,17 @@ public class OwnerPetsPanel extends BasePanel {
     }
 
     private JPanel createDetailCard() {
-        JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setOpaque(true);
-        card.setBackground(Color.WHITE);
-        card.setBorder(new CompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(12, 16, 12, 16)
-        ));
+        PawComponents.PawCard card = new PawComponents.PawCard(14);
+        card.setBackgroundTint(PawTheme.PEACH_LIGHT);
+        card.setBorderTint(PawTheme.PEACH);
+        card.setLayout(new BorderLayout(10, 12));
+        card.setBorder(new EmptyBorder(14, 18, 14, 18));
 
         // Top info header
         JPanel topInfo = new JPanel(new BorderLayout(8, 4));
         topInfo.setOpaque(false);
 
-        JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         leftHeader.setOpaque(false);
         leftHeader.add(petHeaderLabel);
         leftHeader.add(speciesBadgeLabel);
@@ -172,15 +152,15 @@ public class OwnerPetsPanel extends BasePanel {
         card.add(topInfo, BorderLayout.NORTH);
 
         // Center: Dual Panels (Care Guidelines on Left, Schedule Ahead on Right)
-        JPanel dualPanel = new JPanel(new GridLayout(1, 2, 14, 0));
+        JPanel dualPanel = new JPanel(new GridLayout(1, 2, 16, 0));
         dualPanel.setOpaque(false);
 
         // Left: Care Guidelines
         JPanel leftBox = new JPanel(new BorderLayout(0, 6));
         leftBox.setOpaque(false);
-        JLabel guidelinesTitle = new JLabel("📖 Breed & Species Guidelines");
-        guidelinesTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        guidelinesTitle.setForeground(new Color(71, 85, 105));
+        JLabel guidelinesTitle = new JLabel("Breed & Species Guidelines", PawIcons.document(14, PawTheme.CORAL_TEXT), SwingConstants.LEFT);
+        guidelinesTitle.setFont(PawTheme.FONT_BODY_BOLD);
+        guidelinesTitle.setForeground(PawTheme.CORAL_TEXT);
         leftBox.add(guidelinesTitle, BorderLayout.NORTH);
         leftBox.add(new JScrollPane(guidelinesTextArea), BorderLayout.CENTER);
         dualPanel.add(leftBox);
@@ -191,9 +171,9 @@ public class OwnerPetsPanel extends BasePanel {
 
         JPanel rightHeader = new JPanel(new BorderLayout());
         rightHeader.setOpaque(false);
-        JLabel scheduleTitle = new JLabel("⏰ Upcoming Schedule & Next Due Dates");
-        scheduleTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        scheduleTitle.setForeground(new Color(13, 148, 136)); // Teal
+        JLabel scheduleTitle = new JLabel("Upcoming Schedule & Due Dates", PawIcons.clock(14, PawTheme.SUNNY_TEXT), SwingConstants.LEFT);
+        scheduleTitle.setFont(PawTheme.FONT_BODY_BOLD);
+        scheduleTitle.setForeground(PawTheme.SUNNY_TEXT);
         rightHeader.add(scheduleTitle, BorderLayout.WEST);
         rightHeader.add(addReminderQuickButton, BorderLayout.EAST);
 
@@ -207,15 +187,13 @@ public class OwnerPetsPanel extends BasePanel {
     }
 
     private void setupTableAppearance() {
-        petTable.setRowHeight(32);
-        petTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        petTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        petTable.setGridColor(new Color(241, 245, 249));
-        petTable.setSelectionBackground(new Color(219, 234, 254));
-        petTable.setSelectionForeground(new Color(15, 23, 42));
-        petTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        petTable.getTableHeader().setBackground(new Color(248, 250, 252));
-        petTable.getTableHeader().setForeground(new Color(71, 85, 105));
+        PawTheme.styleTable(petTable);
+        petTable.getColumnModel().getColumn(2).setCellRenderer(new PawComponents.StatusTableCellRenderer());
+        petTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+        petTable.getColumnModel().getColumn(1).setPreferredWidth(160);
+        petTable.getColumnModel().getColumn(2).setPreferredWidth(130);
+        petTable.getColumnModel().getColumn(3).setPreferredWidth(130);
+        petTable.getColumnModel().getColumn(4).setPreferredWidth(100);
     }
 
     private void openAddPetDialog() {
@@ -258,6 +236,11 @@ public class OwnerPetsPanel extends BasePanel {
             PetHistoryDialog dialog = new PetHistoryDialog(topFrame, selectedPet);
             dialog.setVisible(true);
         }
+    }
+
+    @Override
+    public void refresh() {
+        loadOwnerPets();
     }
 
     public void loadOwnerPets() {
@@ -307,15 +290,7 @@ public class OwnerPetsPanel extends BasePanel {
         PetDTO pet = tableModel.getItem(selectedRow);
         if (pet == null) return;
 
-        String icon = switch (pet.getSpecies() != null ? pet.getSpecies().toUpperCase() : "") {
-            case "DOG" -> "🐶";
-            case "CAT" -> "🐱";
-            case "BIRD" -> "🦜";
-            case "REPTILE" -> "🦎";
-            default -> "🐾";
-        };
-
-        petHeaderLabel.setText(icon + " " + pet.getName());
+        petHeaderLabel.setText(pet.getName());
         speciesBadgeLabel.setText(" " + (pet.getSpecies() != null ? pet.getSpecies().toUpperCase() : "UNKNOWN") + " ");
         speciesBadgeLabel.setBackground(getSpeciesColor(pet.getSpecies()));
         speciesBadgeLabel.setForeground(Color.WHITE);
@@ -348,26 +323,20 @@ public class OwnerPetsPanel extends BasePanel {
                 try {
                     List<ReminderDTO> reminders = get();
                     if (reminders == null || reminders.isEmpty()) {
-                        scheduleTextArea.setText("✅ All vaccinations & care treatments are up to date!\nNo pending reminders ahead.");
+                        scheduleTextArea.setText("All vaccinations and care treatments are up to date.\nNo pending reminders ahead.");
                     } else {
                         StringBuilder sb = new StringBuilder();
                         LocalDate today = LocalDate.now();
                         for (ReminderDTO r : reminders) {
-                            String typeIcon = switch (r.getType() != null ? r.getType() : "") {
-                                case "VACCINATION" -> "💉";
-                                case "MEDICATION" -> "💊";
-                                default -> "🩺";
-                            };
-
-                            sb.append(typeIcon).append(" ").append(r.getType());
+                            sb.append("[").append(r.getType()).append("] ");
                             if (r.getDueDate() != null) {
                                 long days = ChronoUnit.DAYS.between(today, r.getDueDate());
                                 if (days < 0) {
-                                    sb.append(": Due ").append(r.getDueDate()).append(" (⚠️ OVERDUE by ").append(Math.abs(days)).append(" days)");
+                                    sb.append("Due ").append(r.getDueDate()).append(" (OVERDUE by ").append(Math.abs(days)).append(" days)");
                                 } else if (days == 0) {
-                                    sb.append(": 🚨 DUE TODAY (").append(r.getDueDate()).append(")");
+                                    sb.append("DUE TODAY (").append(r.getDueDate()).append(")");
                                 } else {
-                                    sb.append(": Due ").append(r.getDueDate()).append(" (in ").append(days).append(" days)");
+                                    sb.append("Due ").append(r.getDueDate()).append(" (in ").append(days).append(" days)");
                                 }
                             }
                             sb.append("\n");

@@ -4,6 +4,9 @@ import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.ReminderDTO;
 import com.pawlink.vet.model.ReminderRunResponseDTO;
 
@@ -14,96 +17,79 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Automated Reminders & Observer Notification Engine Panel.
- * Extends BasePanel as per team architecture.
- *
- * UI Layout:
- * - Top bar: Title + prominent "Run Reminder Check Now" JButton + Filter dropdown + "Schedule Reminder".
- * - Center: JTable showing Pet Name, Owner Name, Reminder Type, Due Date, Urgency, and Sent Status.
- * - Bottom: Real-time metrics bar (Total, Due, Sent counts) and manual dispatch actions.
- * - Clicking "Run Reminder Check Now" sends POST /api/reminders/run via ApiClient and reloads table.
+ * Modernized Automated Reminders & Observer Notification Engine Panel.
+ * Features high-contrast typography, pure Java2D vector icons, and tactile micro-animated controls.
  */
 public class RemindersPanel extends BasePanel {
 
-    private final JButton runCheckButton;
+    private final PawComponents.PawButton runCheckButton;
     private final JComboBox<String> filterComboBox;
-    private final JButton createReminderButton;
-    private final JButton refreshButton;
+    private final PawComponents.PawButton createReminderButton;
+    private final PawComponents.PawButton refreshButton;
 
     private final ReminderTableModel tableModel;
     private final JTable reminderTable;
 
-    private final JLabel statsLabel;
+    private final JLabel totalCountLabel;
+    private final JLabel dueCountLabel;
+    private final JLabel sentCountLabel;
 
     private List<ReminderDTO> allReminders = new ArrayList<>();
 
     public RemindersPanel() {
-        super("🔔 Automated Reminders & Observer Engine",
+        super("Automated Reminders & Care Engine",
                 "Scan upcoming vaccination and medication due dates; trigger multi-channel email/SMS dispatches");
 
+        setHeaderIcon(PawIcons.bell(24, PawTheme.SUNNY));
+        setHeaderColor(PawTheme.SUNNY_TEXT);
+
         // 1. Top Controls Bar
-        runCheckButton = new JButton("⚡ Run Reminder Check Now");
-        runCheckButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        runCheckButton.setBackground(new Color(234, 88, 12)); // Bold Orange
-        runCheckButton.setForeground(Color.WHITE);
-        runCheckButton.setFocusPainted(false);
-        runCheckButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        runCheckButton = new PawComponents.PawButton("Run Observer Scan", PawIcons.clock(15, PawTheme.SUNNY_TEXT), PawComponents.ButtonStyle.SUNNY);
         runCheckButton.setToolTipText("Manually scan and dispatch notifications for all due and overdue pet care reminders");
 
         filterComboBox = new JComboBox<>(new String[]{"All Reminders", "Due / Overdue Only", "Sent / Dispatched Only", "Upcoming Only"});
-        filterComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        filterComboBox.setFont(PawTheme.FONT_BODY);
+        filterComboBox.setPreferredSize(new Dimension(190, 36));
 
-        createReminderButton = new JButton("➕ Schedule Reminder");
-        createReminderButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        createReminderButton.setBackground(new Color(13, 148, 136)); // Teal
-        createReminderButton.setForeground(Color.WHITE);
-        createReminderButton.setFocusPainted(false);
-        createReminderButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        refreshButton = new JButton("🔄 Refresh");
-        refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        refreshButton.setFocusPainted(false);
-        refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        createReminderButton = new PawComponents.PawButton("Schedule Reminder", PawIcons.plus(13, Color.WHITE), PawComponents.ButtonStyle.CORAL);
+        refreshButton = new PawComponents.PawButton("Refresh", PawIcons.refresh(13, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
 
         JPanel topBar = createTopBar();
 
-        // 2. Center Table
+        // 2. Center Table inside PawCard
         tableModel = new ReminderTableModel();
         reminderTable = new JTable(tableModel);
-        reminderTable.setRowHeight(36);
-        reminderTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        reminderTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        reminderTable.getTableHeader().setBackground(new Color(241, 245, 249));
-        reminderTable.getTableHeader().setForeground(new Color(30, 41, 59));
-        reminderTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        reminderTable.setShowGrid(true);
-        reminderTable.setGridColor(new Color(226, 232, 240));
-
+        PawTheme.styleTable(reminderTable);
         setupTableRenderers();
 
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
+
         JScrollPane scrollPane = new JScrollPane(reminderTable);
-        scrollPane.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(0, 0, 0, 0)
-        ));
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        scrollPane.getViewport().setBackground(PawTheme.SURFACE);
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
         // 3. Bottom Status & Metrics Bar
-        statsLabel = new JLabel("Loading reminders...");
-        statsLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        statsLabel.setForeground(new Color(71, 85, 105));
+        totalCountLabel = createStatBadge("Total:", "0", PawTheme.INDIGO);
+        dueCountLabel = createStatBadge("Due / Overdue:", "0", PawTheme.CORAL);
+        sentCountLabel = createStatBadge("Dispatched:", "0", PawTheme.MINT);
 
         JPanel bottomBar = createBottomBar();
+        tableCard.add(bottomBar, BorderLayout.SOUTH);
 
         // Main assembly
-        JPanel container = new JPanel(new BorderLayout(0, 12));
+        JPanel container = new JPanel(new BorderLayout(0, 14));
         container.setOpaque(false);
         container.add(topBar, BorderLayout.NORTH);
-        container.add(scrollPane, BorderLayout.CENTER);
-        container.add(bottomBar, BorderLayout.SOUTH);
+        container.add(tableCard, BorderLayout.CENTER);
 
         setContent(container);
 
@@ -111,27 +97,37 @@ public class RemindersPanel extends BasePanel {
         loadReminders();
     }
 
+    private JLabel createStatBadge(String prefix, String val, Color highlight) {
+        JLabel lbl = new JLabel(prefix + " " + val);
+        lbl.setFont(PawTheme.FONT_BODY_BOLD);
+        lbl.setForeground(highlight);
+        return lbl;
+    }
+
     private JPanel createTopBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
-        bar.setBackground(Color.WHITE);
+        bar.setBackground(PawTheme.SURFACE);
         bar.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(8, 12, 8, 12)
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(8, 14, 8, 14)
         ));
 
         bar.add(runCheckButton);
 
         JSeparator sep1 = new JSeparator(SwingConstants.VERTICAL);
-        sep1.setPreferredSize(new Dimension(2, 26));
+        sep1.setPreferredSize(new Dimension(1, 26));
+        sep1.setForeground(PawTheme.BORDER_LIGHT);
         bar.add(sep1);
 
-        JLabel filterLbl = new JLabel("Filter View:");
-        filterLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JLabel filterLbl = new JLabel("Filter:");
+        filterLbl.setFont(PawTheme.FONT_BODY_BOLD);
+        filterLbl.setForeground(PawTheme.TEXT_BODY);
         bar.add(filterLbl);
         bar.add(filterComboBox);
 
         JSeparator sep2 = new JSeparator(SwingConstants.VERTICAL);
-        sep2.setPreferredSize(new Dimension(2, 26));
+        sep2.setPreferredSize(new Dimension(1, 26));
+        sep2.setForeground(PawTheme.BORDER_LIGHT);
         bar.add(sep2);
 
         bar.add(createReminderButton);
@@ -142,101 +138,98 @@ public class RemindersPanel extends BasePanel {
 
     private JPanel createBottomBar() {
         JPanel bar = new JPanel(new BorderLayout());
-        bar.setBackground(Color.WHITE);
+        bar.setBackground(PawTheme.SURFACE);
         bar.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
                 new EmptyBorder(10, 16, 10, 16)
         ));
 
-        bar.add(statsLabel, BorderLayout.WEST);
+        JPanel statsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
+        statsRow.setOpaque(false);
+        statsRow.add(totalCountLabel);
+        statsRow.add(new JSeparator(SwingConstants.VERTICAL));
+        statsRow.add(dueCountLabel);
+        statsRow.add(new JSeparator(SwingConstants.VERTICAL));
+        statsRow.add(sentCountLabel);
 
-        JLabel helpNote = new JLabel("💡 Reminders automatically trigger Observer notifications to Pet Owners & Sitters via Email/SMS adapters");
-        helpNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        helpNote.setForeground(new Color(100, 116, 139));
+        bar.add(statsRow, BorderLayout.WEST);
+
+        JLabel helpNote = new JLabel("Observer Pattern Engine dispatches real-time reminders via Email & SMS adapters");
+        helpNote.setFont(PawTheme.FONT_SMALL);
+        helpNote.setForeground(PawTheme.TEXT_MUTED);
         bar.add(helpNote, BorderLayout.EAST);
 
         return bar;
     }
 
     private void setupTableRenderers() {
-        // Urgency Chip Renderer (Column 4)
-        reminderTable.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                String urgency = value != null ? value.toString() : "";
+        // Due Date Renderer (Column 4 - Centered)
+        DefaultTableCellRenderer dateRenderer = new DefaultTableCellRenderer();
+        dateRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        reminderTable.getColumnModel().getColumn(4).setCellRenderer(dateRenderer);
 
-                if (!isSelected) {
-                    switch (urgency) {
-                        case "OVERDUE" -> {
-                            label.setBackground(new Color(254, 226, 226)); // soft red
-                            label.setForeground(new Color(185, 28, 28));   // deep red
-                            label.setText("⚠ OVERDUE");
-                        }
-                        case "DUE_TODAY" -> {
-                            label.setBackground(new Color(254, 243, 199)); // amber
-                            label.setForeground(new Color(180, 83, 9));
-                            label.setText("⏱ DUE TODAY");
-                        }
-                        case "UPCOMING" -> {
-                            label.setBackground(new Color(224, 242, 254)); // light blue
-                            label.setForeground(new Color(3, 105, 161));
-                            label.setText("📅 UPCOMING");
-                        }
-                        case "SENT" -> {
-                            label.setBackground(new Color(220, 252, 231)); // green
-                            label.setForeground(new Color(22, 101, 52));
-                            label.setText("✔ DISPATCHED");
-                        }
-                        default -> {
-                            label.setBackground(Color.WHITE);
-                            label.setForeground(Color.BLACK);
-                        }
-                    }
-                    label.setOpaque(true);
-                }
-                return label;
-            }
-        });
-
-        // Sent Status Badge Renderer (Column 5)
+        // Urgency Chip Renderer (Column 5)
         reminderTable.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                            boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                boolean sent = Boolean.TRUE.equals(value);
-                if (!isSelected) {
-                    if (sent) {
-                        label.setBackground(new Color(240, 253, 244));
-                        label.setForeground(new Color(22, 163, 74));
-                        label.setText("Sent (TRUE)");
-                    } else {
-                        label.setBackground(new Color(254, 242, 242));
-                        label.setForeground(new Color(220, 38, 38));
-                        label.setText("Pending (FALSE)");
-                    }
-                    label.setOpaque(true);
+                String urgency = value != null ? value.toString() : "";
+                PawComponents.StatusPill pill;
+
+                switch (urgency) {
+                    case "OVERDUE" -> pill = new PawComponents.StatusPill("OVERDUE", PawTheme.DANGER_LIGHT, PawTheme.DANGER_TEXT, PawTheme.DANGER);
+                    case "DUE_TODAY" -> pill = new PawComponents.StatusPill("DUE TODAY", PawTheme.WARNING_LIGHT, PawTheme.WARNING_TEXT, PawTheme.WARNING);
+                    case "UPCOMING" -> pill = new PawComponents.StatusPill("UPCOMING", PawTheme.INFO_LIGHT, PawTheme.INFO_TEXT, PawTheme.INFO);
+                    case "SENT" -> pill = new PawComponents.StatusPill("DISPATCHED", PawTheme.SUCCESS_LIGHT, PawTheme.SUCCESS_TEXT, PawTheme.SUCCESS);
+                    default -> pill = new PawComponents.StatusPill(urgency.isEmpty() ? "STANDARD" : urgency, PawTheme.SURFACE_MUTED, PawTheme.TEXT_MUTED, PawTheme.TEXT_MUTED);
                 }
-                return label;
+
+                JPanel holder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+                holder.setOpaque(isSelected);
+                if (isSelected) {
+                    holder.setBackground(table.getSelectionBackground());
+                } else {
+                    holder.setBackground(row % 2 == 0 ? PawTheme.SURFACE : new Color(250, 250, 252));
+                }
+                holder.add(pill);
+                return holder;
+            }
+        });
+
+        // Sent Status Badge Renderer (Column 6)
+        reminderTable.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus, int row, int column) {
+                boolean sent = Boolean.TRUE.equals(value);
+                PawComponents.StatusPill pill = sent
+                        ? new PawComponents.StatusPill("DISPATCHED", PawTheme.SUCCESS_LIGHT, PawTheme.SUCCESS_TEXT, PawTheme.SUCCESS)
+                        : new PawComponents.StatusPill("PENDING", PawTheme.WARNING_LIGHT, PawTheme.WARNING_TEXT, PawTheme.WARNING);
+
+                JPanel holder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+                holder.setOpaque(isSelected);
+                if (isSelected) {
+                    holder.setBackground(table.getSelectionBackground());
+                } else {
+                    holder.setBackground(row % 2 == 0 ? PawTheme.SURFACE : new Color(250, 250, 252));
+                }
+                holder.add(pill);
+                return holder;
             }
         });
 
         // Column widths
         reminderTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
-        reminderTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Pet
-        reminderTable.getColumnModel().getColumn(2).setPreferredWidth(150); // Owner Contact
+        reminderTable.getColumnModel().getColumn(1).setPreferredWidth(130); // Pet
+        reminderTable.getColumnModel().getColumn(2).setPreferredWidth(170); // Owner Contact
         reminderTable.getColumnModel().getColumn(3).setPreferredWidth(130); // Type
-        reminderTable.getColumnModel().getColumn(4).setPreferredWidth(120); // Urgency
-        reminderTable.getColumnModel().getColumn(5).setPreferredWidth(110); // Sent Status
+        reminderTable.getColumnModel().getColumn(4).setPreferredWidth(110); // Due Date
+        reminderTable.getColumnModel().getColumn(5).setPreferredWidth(130); // Urgency
+        reminderTable.getColumnModel().getColumn(6).setPreferredWidth(120); // Sent Status
     }
 
     private void initListeners() {
         runCheckButton.addActionListener(e -> triggerObserverCheck());
-
         filterComboBox.addActionListener(e -> applyFilter());
 
         createReminderButton.addActionListener(e -> {
@@ -247,6 +240,11 @@ public class RemindersPanel extends BasePanel {
         });
 
         refreshButton.addActionListener(e -> loadReminders());
+    }
+
+    @Override
+    public void refresh() {
+        loadReminders();
     }
 
     public void loadReminders() {
@@ -269,7 +267,7 @@ public class RemindersPanel extends BasePanel {
             protected void done() {
                 refreshButton.setEnabled(true);
                 try {
-                    allReminders = get();
+                    allReminders = deduplicateReminders(get());
                     applyFilter();
                 } catch (Exception ex) {
                     showError("Failed to fetch reminders: " + ex.getMessage());
@@ -277,6 +275,22 @@ public class RemindersPanel extends BasePanel {
             }
         };
         worker.execute();
+    }
+
+    private List<ReminderDTO> deduplicateReminders(List<ReminderDTO> list) {
+        if (list == null) return Collections.emptyList();
+        Map<String, ReminderDTO> map = new LinkedHashMap<>();
+        for (ReminderDTO r : list) {
+            String key = r.getPetId() + "_" + (r.getType() != null ? r.getType().toUpperCase() : "") + "_" + r.getDueDate();
+            ReminderDTO existing = map.get(key);
+            if (existing == null) {
+                map.put(key, r);
+            } else if (!existing.isSent() && r.isSent()) {
+                // Keep dispatched status if one was sent
+                map.put(key, r);
+            }
+        }
+        return new ArrayList<>(map.values());
     }
 
     private void applyFilter() {
@@ -310,8 +324,9 @@ public class RemindersPanel extends BasePanel {
                 .count();
         long sentCount = allReminders.stream().filter(ReminderDTO::isSent).count();
 
-        statsLabel.setText(String.format("📊 Total Reminders: %d | ⚡ Due / Overdue for Dispatch: %d | ✔ Dispatched: %d",
-                total, dueCount, sentCount));
+        totalCountLabel.setText("Total: " + total);
+        dueCountLabel.setText("Due / Overdue: " + dueCount);
+        sentCountLabel.setText("Dispatched: " + sentCount);
     }
 
     /**
@@ -330,7 +345,7 @@ public class RemindersPanel extends BasePanel {
             @Override
             protected void done() {
                 runCheckButton.setEnabled(true);
-                runCheckButton.setText("⚡ Run Reminder Check Now");
+                runCheckButton.setText("Run Observer Scan");
                 try {
                     ReminderRunResponseDTO resp = get();
                     int count = resp != null ? resp.getProcessedCount() : 0;
@@ -340,7 +355,7 @@ public class RemindersPanel extends BasePanel {
                             RemindersPanel.this,
                             message + "\n\n" +
                                     "Dispatched Alerts: " + count + "\n" +
-                                    "Channels: Email & SMS (Simulated Adapter logs in server console)",
+                                    "Channels: Email & SMS adapters active",
                             "Observer Engine Execution Complete",
                             JOptionPane.INFORMATION_MESSAGE
                     );
@@ -361,7 +376,7 @@ public class RemindersPanel extends BasePanel {
     private static class ReminderTableModel extends BaseTableModel<ReminderDTO> {
 
         public ReminderTableModel() {
-            super(new String[]{"ID", "Pet", "Owner Contact", "Reminder Type", "Urgency Status", "Sent"});
+            super(new String[]{"ID", "Pet", "Owner Contact", "Reminder Type", "Due Date", "Urgency Status", "Sent"});
         }
 
         @Override
@@ -375,11 +390,11 @@ public class RemindersPanel extends BasePanel {
                     yield r.getOwnerEmail() != null ? name + " (" + r.getOwnerEmail() + ")" : name;
                 }
                 case 3 -> r.getType();
-                case 4 -> r.getUrgency();
-                case 5 -> r.isSent();
+                case 4 -> r.getDueDate() != null ? r.getDueDate().toString() : "-";
+                case 5 -> r.getUrgency();
+                case 6 -> r.isSent();
                 default -> null;
             };
         }
     }
 }
-

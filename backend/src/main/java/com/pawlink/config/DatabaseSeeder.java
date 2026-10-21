@@ -74,6 +74,9 @@ public class DatabaseSeeder implements ApplicationRunner {
         // Safely consolidate duplicate pets
         deduplicatePets();
 
+        // Safely consolidate duplicate reminders
+        deduplicateReminders();
+
         log.info("PawLink Database Seeder completed check. Total veterinarians available: {}", userDAO.findVets().size());
     }
 
@@ -156,6 +159,40 @@ public class DatabaseSeeder implements ApplicationRunner {
             }
         } catch (Exception ex) {
             log.warn("Pet deduplication skipped or error: {}", ex.getMessage());
+        }
+    }
+
+    private void deduplicateReminders() {
+        try {
+            List<Map<String, Object>> duplicates = jdbcTemplate.queryForList(
+                "SELECT pet_id, type, due_date, " +
+                "       MIN(id) AS keep_id, " +
+                "       MAX(CASE WHEN sent = TRUE THEN 1 ELSE 0 END) AS any_sent " +
+                "FROM reminders GROUP BY pet_id, type, due_date HAVING COUNT(*) > 1"
+            );
+            int removedCount = 0;
+            for (Map<String, Object> dup : duplicates) {
+                Long keepId = ((Number) dup.get("keep_id")).longValue();
+                Long petId = ((Number) dup.get("pet_id")).longValue();
+                String type = (String) dup.get("type");
+                Object dueDate = dup.get("due_date");
+                boolean anySent = ((Number) dup.get("any_sent")).intValue() == 1;
+
+                if (anySent) {
+                    jdbcTemplate.update("UPDATE reminders SET sent = TRUE WHERE id = ?", keepId);
+                }
+
+                int deleted = jdbcTemplate.update(
+                    "DELETE FROM reminders WHERE pet_id = ? AND type = ? AND due_date = ? AND id != ?",
+                    petId, type, dueDate, keepId
+                );
+                removedCount += deleted;
+            }
+            if (removedCount > 0) {
+                log.info("Deduplicated and purged {} redundant reminder records.", removedCount);
+            }
+        } catch (Exception ex) {
+            log.warn("Reminder deduplication skipped or error: {}", ex.getMessage());
         }
     }
 

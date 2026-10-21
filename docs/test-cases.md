@@ -6,7 +6,9 @@ This document specifies the end-to-end Quality Assurance test suite and validati
 
 ## 1. Test Execution Summary
 
-- **Total Test Cases:** 15
+- **Total Test Cases:** 17
+- **Runtime Environment:** Java 25 (JDK 25 LTS) with `--release 21` compilation target.
+- **Automated Test Suite:** 73 passing unit and integration tests across all services and controllers.
 - **Modules Covered:** Authentication, Pets, Medical & Vaccines, Appointments, Reminders, Sitter Bookings, Check-Ins, Payments & Escrow, Admin Approvals & System Analytics.
 - **Architectural Scope:** Spring Boot 3, Spring JdbcTemplate, BCrypt Password Security, Custom Exception Mappings (400, 401, 404, 409).
 
@@ -24,11 +26,13 @@ This document specifies the end-to-end Quality Assurance test suite and validati
 | **TC-05** | Medical Records | `/api/medical/records` | `POST` | `{"petId":1,"vetId":2,"recordDate":"2026-10-20","diagnosis":"Ear Infection","prescription":"Antibiotic drops"}` | `201 Created` | Persists medical consultation visit in `medical_records` table linked to vet. |
 | **TC-06** | Vaccination | `/api/medical/vaccinations` | `POST` | `{"petId":1,"vaccineName":"Rabies Annual","givenDate":"2026-10-20","nextDueDate":"2027-10-20"}` | `201 Created` | Automatically schedules a future `VACCINATION` reminder in `reminders` table due on `nextDueDate`. |
 | **TC-07** | Appointments | `/api/appointments` | `POST` | `{"vetId":2,"petId":1,"ownerId":1,"startTime":"2026-11-01T10:00:00","endTime":"2026-11-01T11:00:00"}` | `201 Created` | Successfully schedules slot with status `PENDING` when no time conflict exists. |
+| **TC-07b** | Appointments | `/api/appointments` | `POST` | `{"vetId":2,"petId":1,"ownerId":1,"startTime":"2020-01-01T10:00:00","endTime":"2020-01-01T11:00:00"}` | `400 Bad Request` | Client & server validation: blocks past appointment dates/times on today or earlier dates. |
 | **TC-08** | Appointments | `/api/appointments` | `POST` | `{"vetId":2,"petId":2,"ownerId":1,"startTime":"2026-11-01T10:30:00","endTime":"2026-11-01T11:30:00"}` | `409 Conflict` | Conflict detection via `Schedulable`: detects interval overlap ($10:30 < 11:00 \land 11:30 > 10:00$) and returns `SlotUnavailableException`. |
 | **TC-09** | Appointments | `/api/appointments/{id}/status` | `PATCH` | `{"status":"CONFIRMED"}` | `200 OK` | Transitions appointment status to `CONFIRMED`. |
 | **TC-10** | Reminders | `/api/reminders/run` | `POST` | None | `200 OK` | Observer engine sweeps due reminders and dispatches simulated alerts via `EmailAdapter` and `SmsAdapter`. |
 | **TC-11** | Admin Approval | `/api/admin/sitters/{id}/approve` | `PATCH` | None | `204 No Content` | Sets `verified = TRUE` in `sitters` table for sitter ID, unlocking booking eligibility. |
-| **TC-12** | Sitter Booking | `/api/sitter-bookings` | `POST` | `{"petId":1,"sitterId":3,"ownerId":1,"startTime":"2026-11-05T09:00:00","endTime":"2026-11-05T13:00:00","paymentMethod":"UPI"}` | `201 Created` | Enforces Domain Invariant: verified sitter booked, fee calculated ($4 \text{ hrs} \times \$25 = \$100$), and payment placed in escrow (`HELD`). |
+| **TC-12** | Sitter Booking | `/api/sitter-bookings` | `POST` | `{"petId":1,"sitterId":3,"ownerId":1,"startTime":"2026-11-05T09:00:00","endTime":"2026-11-05T13:00:00","paymentMethod":"UPI"}` | `201 Created` | Enforces Domain Invariant: verified sitter booked, fee calculated ($4 \text{ hrs} \times ₹250 = ₹1,000$), and payment placed in escrow (`HELD`). |
+| **TC-12b** | Sitter Booking | `/api/sitter-bookings` | `POST` | `{"petId":1,"sitterId":3,"ownerId":1,"startTime":"2020-01-01T09:00:00","endTime":"2020-01-01T11:00:00","paymentMethod":"UPI"}` | `400 Bad Request` | Validation: sitting start time cannot be in the past; end time must strictly succeed start time by at least 30 minutes. |
 | **TC-13** | Sitter Booking | `/api/sitter-bookings` | `POST` | `{"petId":1,"sitterId":4,"ownerId":1,"startTime":"2026-11-05T09:00:00","endTime":"2026-11-05T13:00:00","paymentMethod":"CARD"}` | `400 Bad Request` | Fails with `UnverifiedSitterException` when attempting to book unverified sitter (sitter ID 4). |
 | **TC-14** | Care Check-In | `/api/sitter-bookings/{id}/checkins` | `POST` | `{"note":"Fed Buddy lunch and completed 30-min walk."}` | `201 Created` | Logs timestamped check-in note visible to pet parent in real-time timeline. |
 | **TC-15** | System Stats | `/api/admin/stats` | `GET` | None | `200 OK` | Returns `SystemStatsDTO` aggregating users by role, appointments per vet, and bookings per sitter via SQL `GROUP BY`. |

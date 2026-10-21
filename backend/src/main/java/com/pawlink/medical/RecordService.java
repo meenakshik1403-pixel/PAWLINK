@@ -1,6 +1,5 @@
 package com.pawlink.medical;
 
-import com.pawlink.pet.PetDAO;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -20,16 +18,13 @@ public class RecordService {
 
     private final MedicalRecordDAO medicalRecordDAO;
     private final VaccinationDAO vaccinationDAO;
-    private final PetDAO petDAO;
     private final JdbcTemplate jdbcTemplate;
 
     public RecordService(MedicalRecordDAO medicalRecordDAO,
                          VaccinationDAO vaccinationDAO,
-                         PetDAO petDAO,
                          JdbcTemplate jdbcTemplate) {
         this.medicalRecordDAO = medicalRecordDAO;
         this.vaccinationDAO = vaccinationDAO;
-        this.petDAO = petDAO;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -100,9 +95,13 @@ public class RecordService {
         vaccinationDAO.insert(vac);
 
         // Inter-module integration with P5 Reminders:
-        // Automatically insert a reminder row in the reminders table
-        final String reminderSql = "INSERT INTO reminders (pet_id, type, due_date, sent) VALUES (?, 'VACCINATION', ?, false)";
-        jdbcTemplate.update(reminderSql, vac.getPetId(), Date.valueOf(vac.getNextDueDate()));
+        // Automatically insert a reminder row in the reminders table if not already scheduled
+        final String checkSql = "SELECT COUNT(*) FROM reminders WHERE pet_id = ? AND type = 'VACCINATION' AND due_date = ?";
+        Integer existing = jdbcTemplate.queryForObject(checkSql, Integer.class, vac.getPetId(), Date.valueOf(vac.getNextDueDate()));
+        if (existing == null || existing == 0) {
+            final String reminderSql = "INSERT INTO reminders (pet_id, type, due_date, sent) VALUES (?, 'VACCINATION', ?, false)";
+            jdbcTemplate.update(reminderSql, vac.getPetId(), Date.valueOf(vac.getNextDueDate()));
+        }
 
         return vac;
     }
@@ -131,8 +130,17 @@ public class RecordService {
         }
 
         // Sort descending by event date, then by ID
-        timeline.sort(Comparator.comparing(PetMedicalTimelineDTO::getDate, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(PetMedicalTimelineDTO::getId, Comparator.nullsLast(Comparator.reverseOrder())));
+        timeline.sort((a, b) -> {
+            if (a.getDate() == null && b.getDate() == null) return 0;
+            if (a.getDate() == null) return 1;
+            if (b.getDate() == null) return -1;
+            int dateCmp = b.getDate().compareTo(a.getDate());
+            if (dateCmp != 0) return dateCmp;
+            if (a.getId() == null && b.getId() == null) return 0;
+            if (a.getId() == null) return 1;
+            if (b.getId() == null) return -1;
+            return b.getId().compareTo(a.getId());
+        });
 
         return timeline;
     }

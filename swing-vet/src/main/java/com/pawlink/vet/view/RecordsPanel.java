@@ -1,10 +1,13 @@
 package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
-import com.pawlink.vet.api.ApiException;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawDatePicker;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.MedicalRecordDTO;
 import com.pawlink.vet.model.PetDTO;
 import com.pawlink.vet.model.PetMedicalTimelineDTO;
@@ -14,7 +17,6 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.LocalDate;
@@ -24,14 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Clinical Medical & Vaccination Records Management Panel.
- * Extends BasePanel as per team architecture.
- *
- * Layout:
- * - Top bar: Pet ID input + "Load Records" button + active patient badge.
- * - Left side (Medical Form): Diagnosis (JTextArea), Prescription (JTextArea), "Save Medical Visit" button.
- * - Right side (Vaccination Sub-form): Vaccine name (JTextField), Next due date picker, "Save Vaccine" button.
- * - Bottom: JTable showing the pet's unified chronological medical and vaccination history.
+ * Modernized Clinical Medical & Vaccination Records Management Panel.
+ * Uses scalable vector icons, modern card sections, and eliminates all emoji tofu boxes.
  */
 public class RecordsPanel extends BasePanel {
 
@@ -46,7 +42,7 @@ public class RecordsPanel extends BasePanel {
 
     // Right Vaccination Form
     private final JTextField vaccineNameField;
-    private final JTextField nextDueDateField;
+    private final PawDatePicker nextDueDateField;
     private final JButton saveVaccineButton;
 
     // Bottom History Table
@@ -56,86 +52,76 @@ public class RecordsPanel extends BasePanel {
     private Long currentPetId = null;
 
     public RecordsPanel() {
-        super("📋 Clinical Medical & Vaccination Records", "Record examination diagnoses, prescriptions, and schedule vaccination reminders");
+        super("Clinical Medical & Vaccination Records", "Record examination diagnoses, prescriptions, and schedule vaccination reminders");
+        setHeaderIcon(PawIcons.medicalRecord(26, PawTheme.LILAC));
+        setHeaderColor(PawTheme.LILAC_TEXT);
 
         // 1. Top Controls Bar
         petIdField = new JTextField(8);
-        petIdField.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        petIdField.setText("1"); // Default to seed pet
+        PawTheme.styleField(petIdField);
+        petIdField.setText("1");
 
-        loadButton = new JButton("Load Records");
-        loadButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        loadButton.setBackground(new Color(13, 148, 136)); // Teal
-        loadButton.setForeground(Color.WHITE);
-        loadButton.setFocusPainted(false);
-        loadButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        loadButton = new PawComponents.PawButton("Load Patient", PawIcons.search(14, PawTheme.LILAC_TEXT), PawComponents.ButtonStyle.LILAC);
 
         activePetLabel = new JLabel("No patient loaded");
-        activePetLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        activePetLabel.setForeground(new Color(71, 85, 105));
+        activePetLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        activePetLabel.setForeground(PawTheme.TEXT_MUTED);
 
         JPanel topBar = createTopBar();
 
-        // 2. Forms Panel (Split Left & Right)
+        // 2. Forms Panel
         diagnosisArea = new JTextArea(4, 25);
         diagnosisArea.setLineWrap(true);
         diagnosisArea.setWrapStyleWord(true);
-        diagnosisArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        diagnosisArea.setFont(PawTheme.FONT_BODY);
+        diagnosisArea.setBorder(new EmptyBorder(8, 10, 8, 10));
 
         prescriptionArea = new JTextArea(4, 25);
         prescriptionArea.setLineWrap(true);
         prescriptionArea.setWrapStyleWord(true);
-        prescriptionArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        prescriptionArea.setFont(PawTheme.FONT_BODY);
+        prescriptionArea.setBorder(new EmptyBorder(8, 10, 8, 10));
 
-        saveMedicalButton = new JButton("Save Medical Visit");
-        saveMedicalButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        saveMedicalButton.setBackground(new Color(37, 99, 235)); // Blue
-        saveMedicalButton.setForeground(Color.WHITE);
-        saveMedicalButton.setFocusPainted(false);
-        saveMedicalButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        saveMedicalButton = new PawComponents.PawButton("Save Consultation", PawIcons.check(14, PawTheme.LILAC_TEXT), PawComponents.ButtonStyle.LILAC);
 
         vaccineNameField = new JTextField(20);
-        vaccineNameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        PawTheme.styleField(vaccineNameField);
 
-        nextDueDateField = new JTextField(LocalDate.now().plusYears(1).toString(), 15);
-        nextDueDateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        nextDueDateField = new PawDatePicker(LocalDate.now().plusYears(1));
+        nextDueDateField.setAccentColor(PawTheme.MINT);
 
-        saveVaccineButton = new JButton("Save Vaccine & Alert");
-        saveVaccineButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        saveVaccineButton.setBackground(new Color(16, 185, 129)); // Emerald Green
-        saveVaccineButton.setForeground(Color.WHITE);
-        saveVaccineButton.setFocusPainted(false);
-        saveVaccineButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        saveVaccineButton = new PawComponents.PawButton("Save Vaccine & Alert", PawIcons.vaccine(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
 
         JPanel formsPanel = createFormsPanel();
 
-        // 3. Bottom Table
+        // 3. Bottom Table inside PawCard
         tableModel = new TimelineTableModel();
         historyTable = new JTable(tableModel);
         setupTableAppearance();
 
-        JPanel tablePanel = new JPanel(new BorderLayout(0, 8));
-        tablePanel.setOpaque(false);
-        JLabel tableTitle = new JLabel("📊 Chronological Medical & Vaccination Timeline");
-        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tableTitle.setForeground(new Color(30, 41, 59));
-        tablePanel.add(tableTitle, BorderLayout.NORTH);
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
+        tableCard.setBorder(new EmptyBorder(16, 18, 16, 18));
+
+        JLabel tableTitle = new JLabel("Chronological Medical & Vaccination Timeline", PawIcons.stats(16, PawTheme.LILAC), SwingConstants.LEFT);
+        tableTitle.setFont(PawTheme.FONT_SECTION);
+        tableTitle.setForeground(PawTheme.TEXT_TITLE);
+        tableCard.add(tableTitle, BorderLayout.NORTH);
 
         JScrollPane scrollPane = new JScrollPane(historyTable);
-        scrollPane.setBorder(new LineBorder(new Color(226, 232, 240), 1, true));
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setPreferredSize(new Dimension(800, 240));
-        scrollPane.setMinimumSize(new Dimension(500, 160));
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        scrollPane.setPreferredSize(new Dimension(800, 280));
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
         // 4. Assemble Center Content
-        JPanel centerContent = new JPanel(new BorderLayout(0, 15));
+        JPanel centerContent = new JPanel(new BorderLayout(0, 16));
         centerContent.setOpaque(false);
         centerContent.add(formsPanel, BorderLayout.NORTH);
-        centerContent.add(tablePanel, BorderLayout.CENTER);
+        centerContent.add(tableCard, BorderLayout.CENTER);
 
-        JPanel mainLayout = new JPanel(new BorderLayout(0, 12));
+        JPanel mainLayout = new JPanel(new BorderLayout(0, 14));
         mainLayout.setOpaque(false);
+        mainLayout.setBorder(new EmptyBorder(0, 0, 20, 0));
         mainLayout.add(topBar, BorderLayout.NORTH);
         mainLayout.add(centerContent, BorderLayout.CENTER);
 
@@ -160,15 +146,15 @@ public class RecordsPanel extends BasePanel {
     private JPanel createTopBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
         bar.setOpaque(true);
-        bar.setBackground(Color.WHITE);
+        bar.setBackground(PawTheme.SURFACE);
         bar.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(6, 12, 6, 12)
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(6, 14, 6, 14)
         ));
 
-        JLabel label = new JLabel("Select Pet ID:");
-        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        label.setForeground(new Color(51, 65, 85));
+        JLabel label = new JLabel("Patient Pet ID:");
+        label.setFont(PawTheme.FONT_BODY_BOLD);
+        label.setForeground(PawTheme.TEXT_BODY);
         bar.add(label);
 
         bar.add(petIdField);
@@ -184,35 +170,34 @@ public class RecordsPanel extends BasePanel {
     }
 
     private JPanel createFormsPanel() {
-        JPanel container = new JPanel(new GridLayout(1, 2, 16, 0));
+        JPanel container = new JPanel(new GridLayout(1, 2, 18, 0));
         container.setOpaque(false);
 
         // Left: Medical Form
-        JPanel medPanel = new JPanel(new BorderLayout(0, 10));
-        medPanel.setOpaque(true);
-        medPanel.setBackground(Color.WHITE);
-        medPanel.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(12, 14, 12, 14)
-        ));
+        PawComponents.PawCard medPanel = new PawComponents.PawCard(14);
+        medPanel.setBackgroundTint(PawTheme.LILAC_LIGHT);
+        medPanel.setBorderTint(PawTheme.LILAC);
+        medPanel.setLayout(new BorderLayout(0, 12));
 
-        JLabel medTitle = new JLabel("🩺 Log Clinical Consultation");
-        medTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        medTitle.setForeground(new Color(37, 99, 235));
+        JLabel medTitle = new JLabel("Log Clinical Consultation", PawIcons.stethoscope(18, PawTheme.LILAC), SwingConstants.LEFT);
+        medTitle.setFont(PawTheme.FONT_SECTION);
+        medTitle.setForeground(PawTheme.LILAC_TEXT);
         medPanel.add(medTitle, BorderLayout.NORTH);
 
         JPanel medForm = new JPanel(new GridLayout(4, 1, 0, 6));
         medForm.setOpaque(false);
 
-        medForm.add(new JLabel("Diagnosis / Clinical Assessment *:"));
-        JScrollPane diagScroll = new JScrollPane(diagnosisArea);
-        diagScroll.setPreferredSize(new Dimension(100, 55));
-        medForm.add(diagScroll);
+        JLabel diagLbl = new JLabel("Diagnosis & Clinical Findings *:");
+        diagLbl.setFont(PawTheme.FONT_SMALL_BOLD);
+        diagLbl.setForeground(PawTheme.TEXT_BODY);
+        medForm.add(diagLbl);
+        medForm.add(new JScrollPane(diagnosisArea));
 
-        medForm.add(new JLabel("Prescription / Treatment Plan *:"));
-        JScrollPane rxScroll = new JScrollPane(prescriptionArea);
-        rxScroll.setPreferredSize(new Dimension(100, 55));
-        medForm.add(rxScroll);
+        JLabel rxLbl = new JLabel("Prescription & Treatment Plan *:");
+        rxLbl.setFont(PawTheme.FONT_SMALL_BOLD);
+        rxLbl.setForeground(PawTheme.TEXT_BODY);
+        medForm.add(rxLbl);
+        medForm.add(new JScrollPane(prescriptionArea));
 
         medPanel.add(medForm, BorderLayout.CENTER);
 
@@ -222,26 +207,29 @@ public class RecordsPanel extends BasePanel {
         medPanel.add(medBottom, BorderLayout.SOUTH);
 
         // Right: Vaccination Form
-        JPanel vacPanel = new JPanel(new BorderLayout(0, 10));
-        vacPanel.setOpaque(true);
-        vacPanel.setBackground(Color.WHITE);
-        vacPanel.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(12, 14, 12, 14)
-        ));
+        PawComponents.PawCard vacPanel = new PawComponents.PawCard(14);
+        vacPanel.setBackgroundTint(PawTheme.MINT_LIGHT);
+        vacPanel.setBorderTint(PawTheme.MINT);
+        vacPanel.setLayout(new BorderLayout(0, 12));
 
-        JLabel vacTitle = new JLabel("💉 Record Vaccination & Due Date");
-        vacTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        vacTitle.setForeground(new Color(16, 185, 129));
+        JLabel vacTitle = new JLabel("Record Administered Vaccination", PawIcons.vaccine(18, PawTheme.MINT), SwingConstants.LEFT);
+        vacTitle.setFont(PawTheme.FONT_SECTION);
+        vacTitle.setForeground(PawTheme.MINT_TEXT);
         vacPanel.add(vacTitle, BorderLayout.NORTH);
 
         JPanel vacForm = new JPanel(new GridLayout(4, 1, 0, 6));
         vacForm.setOpaque(false);
 
-        vacForm.add(new JLabel("Vaccine Name (e.g., Rabies, DHPP, FVRCP) *:"));
+        JLabel vNameLbl = new JLabel("Vaccine Name (e.g., Rabies, DHPP, FVRCP) *:");
+        vNameLbl.setFont(PawTheme.FONT_SMALL_BOLD);
+        vNameLbl.setForeground(PawTheme.TEXT_BODY);
+        vacForm.add(vNameLbl);
         vacForm.add(vaccineNameField);
 
-        vacForm.add(new JLabel("Next Due Date (YYYY-MM-DD) *:"));
+        JLabel vDueLbl = new JLabel("Next Due Date (YYYY-MM-DD) *:");
+        vDueLbl.setFont(PawTheme.FONT_SMALL_BOLD);
+        vDueLbl.setForeground(PawTheme.TEXT_BODY);
+        vacForm.add(vDueLbl);
         vacForm.add(nextDueDateField);
 
         vacPanel.add(vacForm, BorderLayout.CENTER);
@@ -257,31 +245,34 @@ public class RecordsPanel extends BasePanel {
     }
 
     private void setupTableAppearance() {
-        historyTable.setRowHeight(32);
-        historyTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        historyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        historyTable.setGridColor(new Color(241, 245, 249));
-        historyTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        historyTable.getTableHeader().setBackground(new Color(248, 250, 252));
-        historyTable.getTableHeader().setForeground(new Color(71, 85, 105));
+        PawTheme.styleTable(historyTable);
 
-        // Custom Cell Renderer for Type column (badge style)
+        historyTable.getColumnModel().getColumn(0).setPreferredWidth(110);
+        historyTable.getColumnModel().getColumn(1).setPreferredWidth(130);
+        historyTable.getColumnModel().getColumn(2).setPreferredWidth(260);
+        historyTable.getColumnModel().getColumn(3).setPreferredWidth(220);
+        historyTable.getColumnModel().getColumn(4).setPreferredWidth(140);
+
+        // Custom Cell Renderer for Type column (badge style without emojis)
         historyTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
                 String type = String.valueOf(value);
-                if ("MEDICAL".equalsIgnoreCase(type)) {
-                    label.setText("🩺 MEDICAL");
-                    label.setForeground(new Color(37, 99, 235));
-                    label.setFont(new Font("Segoe UI", Font.BOLD, 12));
-                } else if ("VACCINATION".equalsIgnoreCase(type)) {
-                    label.setText("💉 VACCINE");
-                    label.setForeground(new Color(16, 185, 129));
-                    label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                boolean isMed = "MEDICAL".equalsIgnoreCase(type);
+                Color fg = isMed ? PawTheme.LILAC_TEXT : PawTheme.MINT_TEXT;
+                Color bg = isMed ? PawTheme.LILAC_LIGHT : PawTheme.MINT_LIGHT;
+                Color border = isMed ? PawTheme.LILAC : PawTheme.MINT;
+                PawComponents.StatusPill pill = new PawComponents.StatusPill(isMed ? "CONSULTATION" : "VACCINE", bg, fg, border);
+
+                JPanel holder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+                holder.setOpaque(isSelected);
+                if (isSelected) {
+                    holder.setBackground(table.getSelectionBackground());
+                } else {
+                    holder.setBackground(row % 2 == 0 ? PawTheme.SURFACE : new Color(250, 250, 252));
                 }
-                return label;
+                holder.add(pill);
+                return holder;
             }
         });
     }
@@ -327,7 +318,7 @@ public class RecordsPanel extends BasePanel {
             @Override
             protected void done() {
                 loadButton.setEnabled(true);
-                loadButton.setText("Load Records");
+                loadButton.setText("Load Patient");
                 try {
                     List<PetMedicalTimelineDTO> timeline = get();
                     tableModel.setItems(timeline);
@@ -389,13 +380,13 @@ public class RecordsPanel extends BasePanel {
             @Override
             protected void done() {
                 saveMedicalButton.setEnabled(true);
-                saveMedicalButton.setText("Save Medical Visit");
+                saveMedicalButton.setText("Save Consultation");
                 try {
-                    MedicalRecordDTO created = get();
+                    get();
                     diagnosisArea.setText("");
                     prescriptionArea.setText("");
                     showSuccess("Medical consultation saved successfully for Pet #" + currentPetId + "!");
-                    loadPetRecords(); // Reload chronological history
+                    loadPetRecords();
                 } catch (Exception ex) {
                     showError("Failed to save medical consultation: " + ex.getMessage());
                 }
@@ -450,7 +441,7 @@ public class RecordsPanel extends BasePanel {
                     vaccineNameField.setText("");
                     nextDueDateField.setText(LocalDate.now().plusYears(1).toString());
                     showSuccess("Vaccine recorded and automated reminder alert registered for " + created.getNextDueDate() + "!");
-                    loadPetRecords(); // Reload chronological history
+                    loadPetRecords();
                 } catch (Exception ex) {
                     showError("Failed to save vaccination: " + ex.getMessage());
                 }
@@ -459,9 +450,13 @@ public class RecordsPanel extends BasePanel {
         worker.execute();
     }
 
-    /**
-     * Parameterized TableModel for unified Pet Medical & Vaccination History Timeline.
-     */
+    @Override
+    public void refresh() {
+        if (currentPetId != null) {
+            loadPetRecords();
+        }
+    }
+
     private static class TimelineTableModel extends BaseTableModel<PetMedicalTimelineDTO> {
 
         public TimelineTableModel() {

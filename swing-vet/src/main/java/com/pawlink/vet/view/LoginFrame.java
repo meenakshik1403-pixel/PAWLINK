@@ -3,7 +3,9 @@ package com.pawlink.vet.view;
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.ApiException;
 import com.pawlink.vet.api.Session;
-import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.AuthResponseDTO;
 import com.pawlink.vet.model.LoginRequestDTO;
 
@@ -12,167 +14,298 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.geom.RoundRectangle2D;
 
 /**
- * Login Window for the PawLink Desktop Application.
- * Supports authentication against Spring Boot REST API (POST /api/auth/login),
- * session storage in Session singleton, quick-fill demo buttons, and role-based shell launch.
+ * Modernized, aesthetic Login Window for PawLink.
+ * Features a dual-pane layout: Deep slate visual brand panel with vector illustration
+ * on the left, and a clean tactile form card with instant quick-fill demo buttons on the right.
  */
 public class LoginFrame extends JFrame {
 
     private JTextField emailField;
     private JPasswordField passwordField;
-    private JButton loginButton;
-    private JButton registerButton;
-    private JLabel statusLabel;
+    private PawComponents.PawButton loginButton;
+    private PawComponents.PawButton registerButton;
+    private JPanel alertBox;
+    private JLabel alertLabel;
 
     public LoginFrame() {
-        super("PawLink - Login");
+        super("PawLink - Secure Portal Login");
         initUI();
     }
 
     private void initUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(480, 480);
+        setSize(840, 560);
         setLocationRelativeTo(null);
         setResizable(false);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(PawTheme.CANVAS);
 
-        // Top Banner
-        JPanel bannerPanel = new JPanel();
-        bannerPanel.setLayout(new BoxLayout(bannerPanel, BoxLayout.Y_AXIS));
-        bannerPanel.setBackground(new Color(30, 41, 59)); // Dark slate
-        bannerPanel.setBorder(new EmptyBorder(25, 20, 25, 20));
+        // 1. Left Brand Feature Panel (Deep Slate)
+        JPanel leftBrandPanel = createBrandPanel();
+        add(leftBrandPanel, BorderLayout.WEST);
 
-        JLabel logoLabel = new JLabel("🐾 PawLink");
-        logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        logoLabel.setForeground(new Color(248, 250, 252));
-        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        bannerPanel.add(logoLabel);
+        // 2. Right Form Container
+        JPanel rightFormPanel = createFormPanel();
+        add(rightFormPanel, BorderLayout.CENTER);
+    }
 
-        bannerPanel.add(Box.createVerticalStrut(6));
+    private JPanel createBrandPanel() {
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    // Midnight Indigo gradient with subtle warm tint
+                    GradientPaint gp = new GradientPaint(
+                            0, 0, PawTheme.SIDEBAR_BG,
+                            0, getHeight(), new Color(15, 15, 26)
+                    );
+                    g2.setPaint(gp);
+                    g2.fillRect(0, 0, getWidth(), getHeight());
 
-        JLabel subtitleLabel = new JLabel("Pet Care Management & Clinical System");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitleLabel.setForeground(new Color(148, 163, 184));
-        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        bannerPanel.add(subtitleLabel);
+                    // Decorative subtle vector circles
+                    g2.setColor(new Color(255, 107, 107, 16));
+                    g2.fillOval(-40, getHeight() - 140, 220, 220);
+                    g2.setColor(new Color(138, 92, 246, 18));
+                    g2.fillOval(getWidth() - 90, -30, 180, 180);
+                } finally {
+                    g2.dispose();
+                }
+            }
+        };
 
-        add(bannerPanel, BorderLayout.NORTH);
+        panel.setPreferredSize(new Dimension(320, 560));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(new EmptyBorder(44, 30, 36, 30));
 
-        // Center Form
-        JPanel formContainer = new JPanel();
-        formContainer.setLayout(new BoxLayout(formContainer, BoxLayout.Y_AXIS));
-        formContainer.setBorder(new EmptyBorder(20, 35, 10, 35));
-        formContainer.setBackground(Color.WHITE);
+        // Brand Icon & Title
+        JLabel brandIcon = new JLabel(PawIcons.paw(48, PawTheme.CORAL));
+        brandIcon.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(brandIcon);
+        panel.add(Box.createVerticalStrut(14));
 
-        // Email field
+        JLabel brandTitle = new JLabel("PawLink");
+        brandTitle.setFont(PawTheme.FONT_HERO);
+        brandTitle.setForeground(Color.WHITE);
+        brandTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(brandTitle);
+
+        JLabel brandSub = new JLabel("Connected Pet Care Platform");
+        brandSub.setFont(PawTheme.FONT_SUBTITLE);
+        brandSub.setForeground(PawTheme.TEXT_SUBTLE);
+        brandSub.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(brandSub);
+
+        panel.add(Box.createVerticalStrut(34));
+
+        // Value Proposition Bullet Items with crisp vector icons & candy pastel accents
+        panel.add(createFeatureItem("Multi-Role Portals", "Owner, Vet, Sitter, Admin", PawIcons.user(16, PawTheme.CORAL)));
+        panel.add(Box.createVerticalStrut(16));
+        panel.add(createFeatureItem("Clinical Records", "Medical & vaccine timelines", PawIcons.stethoscope(16, PawTheme.SKY)));
+        panel.add(Box.createVerticalStrut(16));
+        panel.add(createFeatureItem("Verified Network", "Document reviewed sitters & vets", PawIcons.shield(16, PawTheme.SUNNY)));
+        panel.add(Box.createVerticalStrut(16));
+        panel.add(createFeatureItem("Direct Settlement", "End-session automatic release (₹)", PawIcons.wallet(16, PawTheme.MINT)));
+
+        panel.add(Box.createVerticalGlue());
+
+        // Platform runtime footer tag
+        JLabel footerTag = new JLabel("JDK 25 LTS · Spring Boot 3 · REST :8080");
+        footerTag.setFont(PawTheme.FONT_SMALL);
+        footerTag.setForeground(new Color(100, 116, 139));
+        footerTag.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(footerTag);
+
+        return panel;
+    }
+
+    private JPanel createFeatureItem(String title, String desc, Icon icon) {
+        JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        item.setOpaque(false);
+        item.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        item.add(new JLabel(icon));
+
+        JPanel textPanel = new JPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        textPanel.setOpaque(false);
+
+        JLabel t = new JLabel(title);
+        t.setFont(PawTheme.FONT_BODY_BOLD);
+        t.setForeground(new Color(241, 245, 249));
+        textPanel.add(t);
+
+        JLabel d = new JLabel(desc);
+        d.setFont(PawTheme.FONT_SMALL);
+        d.setForeground(new Color(148, 163, 184));
+        textPanel.add(d);
+
+        item.add(textPanel);
+        return item;
+    }
+
+    private JPanel createFormPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(PawTheme.SURFACE);
+        panel.setBorder(new EmptyBorder(36, 40, 24, 40));
+
+        // Form Header
+        JLabel welcomeTitle = new JLabel("Welcome Back");
+        welcomeTitle.setFont(PawTheme.FONT_TITLE);
+        welcomeTitle.setForeground(PawTheme.TEXT_TITLE);
+        welcomeTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(welcomeTitle);
+
+        JLabel welcomeSub = new JLabel("Sign in with your registered account credentials.");
+        welcomeSub.setFont(PawTheme.FONT_SUBTITLE);
+        welcomeSub.setForeground(PawTheme.TEXT_MUTED);
+        welcomeSub.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(welcomeSub);
+
+        panel.add(Box.createVerticalStrut(20));
+
+        // Inline Alert Box (replaces jarring plain error text)
+        alertBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 8, 8));
+                g2.dispose();
+            }
+        };
+        alertBox.setOpaque(false);
+        alertBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        alertBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        alertBox.setVisible(false);
+
+        alertLabel = new JLabel();
+        alertLabel.setFont(PawTheme.FONT_SMALL_BOLD);
+        alertBox.add(alertLabel);
+        panel.add(alertBox);
+
+        panel.add(Box.createVerticalStrut(12));
+
+        // Email Address Field
         JLabel emailLbl = new JLabel("Email Address");
-        emailLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        emailLbl.setForeground(new Color(71, 85, 105));
+        emailLbl.setFont(PawTheme.FONT_SMALL_BOLD);
+        emailLbl.setForeground(PawTheme.TEXT_BODY);
         emailLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(emailLbl);
-        formContainer.add(Box.createVerticalStrut(4));
+        panel.add(emailLbl);
+        panel.add(Box.createVerticalStrut(4));
 
         emailField = new JTextField("vet.sarah@pawlink.com");
-        emailField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        PawTheme.styleField(emailField);
         emailField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         emailField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(emailField);
+        panel.add(emailField);
 
-        formContainer.add(Box.createVerticalStrut(14));
+        panel.add(Box.createVerticalStrut(14));
 
-        // Password field
+        // Password Field
         JLabel passLbl = new JLabel("Password");
-        passLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        passLbl.setForeground(new Color(71, 85, 105));
+        passLbl.setFont(PawTheme.FONT_SMALL_BOLD);
+        passLbl.setForeground(PawTheme.TEXT_BODY);
         passLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(passLbl);
-        formContainer.add(Box.createVerticalStrut(4));
+        panel.add(passLbl);
+        panel.add(Box.createVerticalStrut(4));
 
         passwordField = new JPasswordField("password123");
-        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        passwordField.setFont(PawTheme.FONT_BODY);
+        passwordField.setPreferredSize(new Dimension(passwordField.getPreferredSize().width, 38));
         passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(passwordField);
+        panel.add(passwordField);
 
-        // Enter key listener on password field
-        passwordField.addKeyListener(new KeyAdapter() {
+        KeyAdapter enterSubmit = new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     handleLogin();
                 }
             }
-        });
+        };
+        emailField.addKeyListener(enterSubmit);
+        passwordField.addKeyListener(enterSubmit);
 
-        formContainer.add(Box.createVerticalStrut(10));
+        panel.add(Box.createVerticalStrut(18));
 
-        // Status Label for inline messages
-        statusLabel = new JLabel(" ");
-        statusLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        statusLabel.setForeground(new Color(220, 38, 38));
-        statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(statusLabel);
+        // Action Buttons: Sign In (Coral) & Register (Secondary)
+        JPanel actionRow = new JPanel(new GridLayout(1, 2, 14, 0));
+        actionRow.setOpaque(false);
+        actionRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        actionRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        formContainer.add(Box.createVerticalStrut(10));
-
-        // Action Buttons (Login + Register)
-        JPanel actionButtonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
-        actionButtonPanel.setOpaque(false);
-        actionButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        actionButtonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        registerButton = new JButton("Register New");
-        registerButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        registerButton = new PawComponents.PawButton("Create Account", PawIcons.user(16, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
         registerButton.addActionListener(e -> handleOpenRegister());
 
-        loginButton = new JButton("Sign In");
-        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        loginButton.setBackground(new Color(79, 70, 229));
-        loginButton.setForeground(Color.WHITE);
+        loginButton = new PawComponents.PawButton("Sign In", PawIcons.check(16, Color.WHITE), PawComponents.ButtonStyle.CORAL);
         loginButton.addActionListener(e -> handleLogin());
 
-        actionButtonPanel.add(registerButton);
-        actionButtonPanel.add(loginButton);
-        formContainer.add(actionButtonPanel);
+        actionRow.add(registerButton);
+        actionRow.add(loginButton);
+        panel.add(actionRow);
 
-        formContainer.add(Box.createVerticalStrut(18));
+        panel.add(Box.createVerticalStrut(26));
 
-        // Quick Demo Fill Toolbar for easy viva grading
-        JLabel demoLbl = new JLabel("Quick Demo Logins:");
-        demoLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        demoLbl.setForeground(new Color(148, 163, 184));
-        demoLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formContainer.add(demoLbl);
-        formContainer.add(Box.createVerticalStrut(6));
+        // Quick Demo Fill Toolstrip
+        JLabel demoHead = new JLabel("Quick Demo Access:");
+        demoHead.setFont(PawTheme.FONT_SMALL_BOLD);
+        demoHead.setForeground(PawTheme.TEXT_MUTED);
+        demoHead.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(demoHead);
+        panel.add(Box.createVerticalStrut(10));
 
-        JPanel demoBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
-        demoBar.setOpaque(false);
-        demoBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel demoGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        demoGroup.setOpaque(false);
+        demoGroup.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        demoBar.add(createDemoButton("Vet: Sarah", "vet.sarah@pawlink.com"));
-        demoBar.add(createDemoButton("Vet: Michael", "vet.michael@pawlink.com"));
-        demoBar.add(createDemoButton("Owner: John", "owner.john@pawlink.com"));
-        demoBar.add(createDemoButton("Sitter: Emily", "sitter.emily@pawlink.com"));
-        demoBar.add(createDemoButton("Admin: Alice", "admin@pawlink.com"));
-        formContainer.add(demoBar);
+        demoGroup.add(createDemoPill("Dr. Sarah (Vet)", "vet.sarah@pawlink.com", "password123", PawTheme.SKY_LIGHT, PawTheme.SKY_TEXT, PawTheme.SKY, PawIcons.stethoscope(13, PawTheme.SKY_TEXT)));
+        demoGroup.add(createDemoPill("John (Owner)", "owner.john@pawlink.com", "password123", PawTheme.CORAL_LIGHT, PawTheme.CORAL_TEXT, PawTheme.CORAL, PawIcons.paw(13, PawTheme.CORAL_TEXT)));
+        demoGroup.add(createDemoPill("Emily (Sitter)", "sitter.emily@pawlink.com", "password123", PawTheme.SUNNY_LIGHT, PawTheme.SUNNY_TEXT, PawTheme.SUNNY, PawIcons.sitter(13, PawTheme.SUNNY_TEXT)));
+        demoGroup.add(createDemoPill("Admin", "admin@pawlink.com", "AdminSecurePass2026!", PawTheme.LILAC_LIGHT, PawTheme.LILAC_TEXT, PawTheme.LILAC, PawIcons.shield(13, PawTheme.LILAC_TEXT)));
 
-        add(formContainer, BorderLayout.CENTER);
+        panel.add(demoGroup);
+
+        return panel;
     }
 
-    private JButton createDemoButton(String text, String email) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        btn.setMargin(new Insets(2, 6, 2, 6));
-        btn.setFocusable(false);
+    private JButton createDemoPill(String label, String email, String pass, Color bg, Color fg, Color border, Icon icon) {
+        JButton btn = new JButton(label, icon);
+        btn.setFont(PawTheme.FONT_SMALL_BOLD);
+        btn.setForeground(fg);
+        btn.setBackground(bg);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(true);
+        btn.setIconTextGap(6);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(border.getRed(), border.getGreen(), border.getBlue(), 120), 1, true),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)
+        ));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> {
             emailField.setText(email);
-            passwordField.setText("password123");
-            statusLabel.setText("Filled credentials for " + text);
-            statusLabel.setForeground(new Color(37, 99, 235));
+            passwordField.setText(pass);
+            showAlert("Filled credentials for " + label, false);
         });
         return btn;
+    }
+
+    private void showAlert(String msg, boolean isError) {
+        alertBox.setVisible(true);
+        alertBox.setBackground(isError ? PawTheme.DANGER_LIGHT : PawTheme.SUCCESS_LIGHT);
+        alertLabel.setForeground(isError ? PawTheme.DANGER_TEXT : PawTheme.SUCCESS_TEXT);
+        alertLabel.setText(msg);
+        alertLabel.setIcon(isError ? PawIcons.cross(14, PawTheme.DANGER) : PawIcons.check(14, PawTheme.SUCCESS));
+        alertBox.revalidate();
+        alertBox.repaint();
     }
 
     private void handleOpenRegister() {
@@ -182,8 +315,7 @@ public class LoginFrame extends JFrame {
             emailField.setText(dialog.getRegisteredEmail());
             passwordField.setText("");
             passwordField.requestFocusInWindow();
-            statusLabel.setText("Registration complete! Enter password to log in.");
-            statusLabel.setForeground(new Color(22, 163, 74));
+            showAlert("Registration submitted! If approved, enter your password.", false);
         }
     }
 
@@ -192,41 +324,48 @@ public class LoginFrame extends JFrame {
         String password = new String(passwordField.getPassword()).trim();
 
         if (email.isEmpty() || password.isEmpty()) {
-            statusLabel.setText("Please enter both email and password.");
-            statusLabel.setForeground(new Color(220, 38, 38));
+            showAlert("Please enter both email address and password.", true);
             return;
         }
 
         loginButton.setEnabled(false);
-        loginButton.setText("Authenticating...");
-        statusLabel.setText("Connecting to PawLink server...");
-        statusLabel.setForeground(new Color(71, 85, 105));
+        loginButton.setText("Signing In...");
 
-        SwingUtilities.invokeLater(() -> {
-            try {
+        SwingWorker<AuthResponseDTO, Void> worker = new SwingWorker<>() {
+            @Override
+            protected AuthResponseDTO doInBackground() throws Exception {
                 LoginRequestDTO req = new LoginRequestDTO(email, password);
-                AuthResponseDTO res = ApiClient.getInstance().post("/api/auth/login", req, AuthResponseDTO.class);
+                return ApiClient.getInstance().post("/api/auth/login", req, AuthResponseDTO.class);
+            }
 
-                // Store in Session singleton
-                Session.getInstance().login(res.getId(), res.getName(), res.getEmail(), res.getRole());
-
-                // Open MainFrame and close LoginFrame
-                MainFrame mainFrame = new MainFrame();
-                mainFrame.setVisible(true);
-                dispose();
-
-            } catch (ApiException ex) {
-                statusLabel.setText(ex.getMessage());
-                statusLabel.setForeground(new Color(220, 38, 38));
-                Dialogs.showError(this, ex.getMessage());
-            } catch (Exception ex) {
-                statusLabel.setText("Connection failed. Is the backend running on port 8080?");
-                statusLabel.setForeground(new Color(220, 38, 38));
-                Dialogs.showError(this, "Connection error: Could not reach backend server at http://localhost:8080.\n" + ex.getMessage());
-            } finally {
+            @Override
+            protected void done() {
                 loginButton.setEnabled(true);
                 loginButton.setText("Sign In");
+
+                try {
+                    AuthResponseDTO response = get();
+                    Session.getInstance().startSession(
+                            response.getId(),
+                            response.getName(),
+                            response.getEmail(),
+                            response.getRole()
+                    );
+
+                    MainFrame mainFrame = new MainFrame();
+                    mainFrame.setVisible(true);
+                    dispose();
+                } catch (Exception ex) {
+                    String msg = ex.getMessage();
+                    if (ex.getCause() instanceof ApiException apiEx) {
+                        msg = apiEx.getMessage();
+                    } else if (ex.getCause() != null) {
+                        msg = ex.getCause().getMessage();
+                    }
+                    showAlert("Authentication failed: " + msg, true);
+                }
             }
-        });
+        };
+        worker.execute();
     }
 }

@@ -2,20 +2,21 @@ package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.base.BaseTableModel;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.PetDTO;
 import com.pawlink.vet.model.PetMedicalTimelineDTO;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.List;
 
 /**
  * Modal Dialog displaying a pet's complete medical and vaccination history in Swing.
- * Ensures a full Swing client experience for reviewing clinical timelines and vaccinations.
+ * Modernized with pure Java2D vector icons, custom status pills, and high-contrast typography.
  */
 public class PetHistoryDialog extends JDialog {
 
@@ -29,52 +30,59 @@ public class PetHistoryDialog extends JDialog {
         super(parent, "Medical & Vaccination History - " + (pet != null ? pet.getName() : "Pet"), true);
         this.pet = pet;
 
-        setSize(850, 560);
+        setSize(900, 600);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
 
-        JPanel root = new JPanel(new BorderLayout(0, 14));
-        root.setBackground(new Color(248, 250, 252));
-        root.setBorder(new EmptyBorder(18, 20, 18, 20));
+        JPanel root = new JPanel(new BorderLayout(0, 16));
+        root.setBackground(PawTheme.CANVAS);
+        root.setBorder(new EmptyBorder(18, 22, 18, 22));
 
         // 1. Header Banner
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(true);
-        header.setBackground(Color.WHITE);
-        header.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(12, 16, 12, 16)
-        ));
+        JPanel header = new JPanel(new BorderLayout(14, 0));
+        header.setBackground(PawTheme.SIDEBAR_BG);
+        header.setBorder(new EmptyBorder(18, 24, 18, 24));
 
-        headerTitle = new JLabel("🐾 " + (pet != null ? pet.getName() : "Pet") + " - Complete Clinical History");
-        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 17));
-        headerTitle.setForeground(new Color(30, 41, 59));
-        header.add(headerTitle, BorderLayout.NORTH);
+        JLabel iconLabel = new JLabel(PawIcons.medicalRecord(26, PawTheme.LILAC));
+        header.add(iconLabel, BorderLayout.WEST);
+
+        JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 4));
+        titleBlock.setOpaque(false);
+
+        headerTitle = new JLabel((pet != null ? pet.getName() : "Pet") + " - Complete Clinical History");
+        headerTitle.setFont(PawTheme.FONT_TITLE);
+        headerTitle.setForeground(Color.WHITE);
+        titleBlock.add(headerTitle);
 
         subtitleLabel = new JLabel(pet != null
                 ? "Species: " + pet.getSpecies() + "  |  Pet ID: #" + pet.getId() + "  |  Date of Birth: " + pet.getDob()
                 : "");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subtitleLabel.setForeground(new Color(100, 116, 139));
-        header.add(subtitleLabel, BorderLayout.SOUTH);
+        subtitleLabel.setFont(PawTheme.FONT_SMALL);
+        subtitleLabel.setForeground(PawTheme.TEXT_SUBTLE);
+        titleBlock.add(subtitleLabel);
 
+        header.add(titleBlock, BorderLayout.CENTER);
         root.add(header, BorderLayout.NORTH);
 
-        // 2. Table
+        // 2. Table inside PawCard
         tableModel = new TimelineTableModel();
         historyTable = new JTable(tableModel);
+        PawTheme.styleTable(historyTable);
         setupTableAppearance();
 
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
+
         JScrollPane scrollPane = new JScrollPane(historyTable);
-        scrollPane.setBorder(new LineBorder(new Color(226, 232, 240), 1, true));
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        root.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        scrollPane.getViewport().setBackground(PawTheme.SURFACE);
+        tableCard.add(scrollPane, BorderLayout.CENTER);
+        root.add(tableCard, BorderLayout.CENTER);
 
         // 3. Close Button
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
         bottom.setOpaque(false);
-        JButton closeButton = new JButton("Close");
-        closeButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        PawComponents.PawButton closeButton = new PawComponents.PawButton("Close", PawComponents.ButtonStyle.SECONDARY);
         closeButton.addActionListener(e -> dispose());
         bottom.add(closeButton);
         root.add(bottom, BorderLayout.SOUTH);
@@ -85,31 +93,36 @@ public class PetHistoryDialog extends JDialog {
     }
 
     private void setupTableAppearance() {
-        historyTable.setRowHeight(32);
-        historyTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        historyTable.setGridColor(new Color(241, 245, 249));
-        historyTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        historyTable.getTableHeader().setBackground(new Color(248, 250, 252));
-        historyTable.getTableHeader().setForeground(new Color(71, 85, 105));
-
         historyTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
                 String type = String.valueOf(value);
+                PawComponents.StatusPill pill;
                 if ("MEDICAL".equalsIgnoreCase(type)) {
-                    label.setText("🩺 MEDICAL");
-                    label.setForeground(new Color(37, 99, 235));
-                    label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                    pill = new PawComponents.StatusPill("CONSULTATION", PawTheme.LILAC_LIGHT, PawTheme.LILAC_TEXT, PawTheme.LILAC);
                 } else if ("VACCINATION".equalsIgnoreCase(type)) {
-                    label.setText("💉 VACCINE");
-                    label.setForeground(new Color(16, 185, 129));
-                    label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                    pill = new PawComponents.StatusPill("VACCINE", PawTheme.MINT_LIGHT, PawTheme.MINT_TEXT, PawTheme.MINT);
+                } else {
+                    pill = new PawComponents.StatusPill(type, PawTheme.SURFACE_MUTED, PawTheme.TEXT_MUTED, PawTheme.TEXT_MUTED);
                 }
-                return label;
+
+                JPanel holder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+                holder.setOpaque(isSelected);
+                if (isSelected) {
+                    holder.setBackground(table.getSelectionBackground());
+                } else {
+                    holder.setBackground(row % 2 == 0 ? PawTheme.SURFACE : new Color(250, 250, 252));
+                }
+                holder.add(pill);
+                return holder;
             }
         });
+
+        historyTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+        historyTable.getColumnModel().getColumn(1).setPreferredWidth(125);
+        historyTable.getColumnModel().getColumn(2).setPreferredWidth(210);
+        historyTable.getColumnModel().getColumn(3).setPreferredWidth(240);
+        historyTable.getColumnModel().getColumn(4).setPreferredWidth(150);
     }
 
     private void loadTimeline() {

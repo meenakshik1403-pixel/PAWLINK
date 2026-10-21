@@ -1,26 +1,26 @@
 package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
-import com.pawlink.vet.api.ApiException;
-import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
 import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.SitterDTO;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Pet Owner Panel to browse verified pet sitters, inspect rates, and initiate bookings.
- * Extends BasePanel and uses BaseTableModel<SitterDTO>.
+ * Modernized Pet Owner Panel to browse verified pet sitters, inspect rates, and initiate bookings.
+ * Completely eliminates emoji tofu box artifacts by utilizing scalable vector icons and modern status pills.
  */
 public class FindSitterPanel extends BasePanel {
 
@@ -31,7 +31,9 @@ public class FindSitterPanel extends BasePanel {
     private List<SitterDTO> allSitters = new ArrayList<>();
 
     public FindSitterPanel() {
-        super("🏡 Find a Pet Sitter", "Browse approved sitters, compare rates, and book care for your pets with escrow protection.");
+        super("Find a Pet Sitter", "Browse verified sitters, compare rates, and book care with escrow protection.");
+        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
+        setHeaderColor(PawTheme.SUNNY_TEXT);
 
         // Define generic TableModel
         String[] columns = {"ID", "Sitter Name", "Email Address", "Phone", "Hourly Rate", "Status"};
@@ -51,7 +53,7 @@ public class FindSitterPanel extends BasePanel {
         };
 
         this.table = new JTable(tableModel);
-        this.searchField = new JTextField(15);
+        this.searchField = new JTextField(16);
         this.statsLabel = new JLabel("Loading sitters...");
 
         setupUI();
@@ -59,33 +61,16 @@ public class FindSitterPanel extends BasePanel {
     }
 
     private void setupUI() {
-        table.setRowHeight(36);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setShowGrid(true);
-        table.setGridColor(new Color(241, 245, 249));
+        PawTheme.styleTable(table);
+        table.getColumnModel().getColumn(5).setCellRenderer(new PawComponents.StatusTableCellRenderer());
 
-        // Custom Cell Renderer for Verification Status Badge
-        table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int col) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, col);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                String val = String.valueOf(value);
-                if ("VERIFIED".equals(val)) {
-                    label.setText("✓ Verified");
-                    label.setForeground(new Color(16, 185, 129));
-                    label.setFont(label.getFont().deriveFont(Font.BOLD));
-                } else {
-                    label.setText("⏳ Pending");
-                    label.setForeground(new Color(245, 158, 11));
-                    label.setFont(label.getFont().deriveFont(Font.PLAIN));
-                }
-                return label;
-            }
-        });
+        table.getColumnModel().getColumn(0).setPreferredWidth(60);
+        table.getColumnModel().getColumn(0).setMaxWidth(80);
+        table.getColumnModel().getColumn(1).setPreferredWidth(160);
+        table.getColumnModel().getColumn(2).setPreferredWidth(200);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
+        table.getColumnModel().getColumn(4).setPreferredWidth(130);
+        table.getColumnModel().getColumn(5).setPreferredWidth(120);
 
         // Double-click row to book
         table.addMouseListener(new MouseAdapter() {
@@ -97,61 +82,78 @@ public class FindSitterPanel extends BasePanel {
             }
         });
 
-        // Header Accessory: Search + Action Buttons
-        JPanel accessoryPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        // Header Accessory: Refresh and Book Sitter Action
+        JPanel accessoryPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         accessoryPanel.setOpaque(false);
 
-        JLabel searchIcon = new JLabel("🔍");
-        accessoryPanel.add(searchIcon);
-
-        searchField.putClientProperty("JTextField.placeholderText", "Search sitters...");
-        searchField.addActionListener(e -> filterSitters());
-        accessoryPanel.add(searchField);
-
-        JButton filterBtn = new JButton("Filter");
-        filterBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        filterBtn.addActionListener(e -> filterSitters());
-        accessoryPanel.add(filterBtn);
-
-        JButton refreshBtn = new JButton("🔄 Refresh");
-        refreshBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton refreshBtn = new PawComponents.PawButton("Refresh", PawIcons.refresh(14, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
         refreshBtn.addActionListener(e -> loadSitters());
         accessoryPanel.add(refreshBtn);
 
-        JButton bookBtn = new JButton("🏡 Book Selected Sitter");
-        bookBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        bookBtn.setBackground(new Color(79, 70, 229)); // Indigo
-        bookBtn.setForeground(Color.WHITE);
-        bookBtn.setFocusable(false);
+        JButton bookBtn = new PawComponents.PawButton("Book Sitter", PawIcons.calendar(14, PawTheme.SUNNY_TEXT), PawComponents.ButtonStyle.SUNNY);
         bookBtn.addActionListener(e -> openBookDialog());
         accessoryPanel.add(bookBtn);
 
         setHeaderAccessory(accessoryPanel);
 
-        // Center Content: Scroll Pane + Bottom Bar
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 10));
-        centerPanel.setOpaque(false);
+        // Center Content: Scroll Pane inside cute PawCard + Search Toolbar + Bottom Bar
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
+
+        // Dedicated search toolbar above table
+        JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        searchBar.setBackground(PawTheme.SURFACE);
+        searchBar.setBorder(new CompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, PawTheme.BORDER_LIGHT),
+                new EmptyBorder(4, 12, 4, 12)
+        ));
+
+        JLabel searchIcon = new JLabel(PawIcons.search(16, PawTheme.TEXT_MUTED));
+        searchBar.add(searchIcon);
+
+        PawTheme.styleField(searchField);
+        searchField.putClientProperty("JTextField.placeholderText", "Search sitters by name or email...");
+        searchField.setPreferredSize(new Dimension(240, 36));
+        searchField.addActionListener(e -> filterSitters());
+        searchBar.add(searchField);
+
+        JButton filterBtn = new PawComponents.PawButton("Filter", PawComponents.ButtonStyle.SECONDARY);
+        filterBtn.addActionListener(e -> filterSitters());
+        searchBar.add(filterBtn);
+
+        JButton clearBtn = new PawComponents.PawButton("Clear", PawComponents.ButtonStyle.SECONDARY);
+        clearBtn.addActionListener(e -> {
+            searchField.setText("");
+            filterSitters();
+        });
+        searchBar.add(clearBtn);
+
+        tableCard.add(searchBar, BorderLayout.NORTH);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240)));
-        centerPanel.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel bottomBar = new JPanel(new BorderLayout());
+        JPanel bottomBar = new JPanel(new BorderLayout(14, 0));
         bottomBar.setOpaque(false);
-        bottomBar.setBorder(new EmptyBorder(5, 5, 5, 5));
+        bottomBar.setBorder(new EmptyBorder(8, 6, 4, 6));
 
-        statsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        statsLabel.setForeground(new Color(100, 116, 139));
+        statsLabel.setFont(PawTheme.FONT_SUBTITLE);
+        statsLabel.setForeground(PawTheme.TEXT_MUTED);
         bottomBar.add(statsLabel, BorderLayout.WEST);
 
-        JLabel hintLabel = new JLabel("💡 Tip: Select a verified sitter and click 'Book Selected Sitter' or double-click a row.");
-        hintLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        hintLabel.setForeground(new Color(148, 163, 184));
+        JLabel hintLabel = new JLabel("Tip: Double-click any verified sitter to initiate an escrow booking request.");
+        hintLabel.setFont(PawTheme.FONT_SMALL);
+        hintLabel.setForeground(PawTheme.TEXT_SUBTLE);
         bottomBar.add(hintLabel, BorderLayout.EAST);
 
-        centerPanel.add(bottomBar, BorderLayout.SOUTH);
+        tableCard.add(bottomBar, BorderLayout.SOUTH);
+        setContent(tableCard);
+    }
 
-        setContent(centerPanel);
+    @Override
+    public void refresh() {
+        loadSitters();
     }
 
     public void loadSitters() {
@@ -206,7 +208,6 @@ public class FindSitterPanel extends BasePanel {
         SitterDTO sitter = tableModel.getItem(selectedRow);
         if (sitter == null) return;
 
-        // Domain invariant check upfront for smooth UX
         if (!sitter.isVerified()) {
             Dialogs.showWarning(this,
                     "Sitter '" + sitter.getName() + "' is not verified.\n" +

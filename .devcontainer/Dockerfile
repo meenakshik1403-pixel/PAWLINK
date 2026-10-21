@@ -1,5 +1,5 @@
 
-FROM mcr.microsoft.com/devcontainers/java:1-21-bookworm
+FROM mcr.microsoft.com/devcontainers/java:25-bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 

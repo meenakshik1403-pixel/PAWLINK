@@ -4,6 +4,10 @@ cd /d "%~dp0.."
 
 if exist "%JAVA_HOME%\bin\java.exe" (
     set "JAVA_BIN=%JAVA_HOME%\bin\java.exe"
+) else if exist "C:\Program Files\Java\jdk-25.0.5\bin\java.exe" (
+    set "JAVA_BIN=C:\Program Files\Java\jdk-25.0.5\bin\java.exe"
+) else if exist "C:\Program Files\Java\latest\jdk-25\bin\java.exe" (
+    set "JAVA_BIN=C:\Program Files\Java\latest\jdk-25\bin\java.exe"
 ) else if exist "C:\Program Files\Java\jdk-25\bin\java.exe" (
     set "JAVA_BIN=C:\Program Files\Java\jdk-25\bin\java.exe"
 ) else if exist "C:\Program Files\Java\jdk-26.0.2\bin\java.exe" (

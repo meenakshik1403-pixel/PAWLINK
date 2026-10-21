@@ -3,6 +3,9 @@ package com.pawlink.vet.view;
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.SitterDTO;
 import com.pawlink.vet.model.UserDocumentDTO;
 
@@ -17,8 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Modal dialog for inspecting submitted verification documents and setting
+ * Modernized Modal dialog for inspecting submitted verification documents and setting
  * an approved hourly rate (₹/hr) when an administrator approves a Pet Sitter.
+ * Uses scalable vector icons and eliminates emoji tofu boxes.
  */
 public class ApproveSitterDialog extends JDialog {
 
@@ -35,99 +39,95 @@ public class ApproveSitterDialog extends JDialog {
         this.sitter = sitter;
         this.onSuccess = onSuccess;
 
-        setSize(560, 480);
+        setSize(620, 580);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
 
-        JPanel root = new JPanel(new BorderLayout(0, 14));
-        root.setBackground(new Color(248, 250, 252));
-        root.setBorder(new EmptyBorder(16, 20, 16, 20));
+        JPanel root = new JPanel(new BorderLayout(0, 16));
+        root.setBackground(PawTheme.CANVAS);
+        root.setBorder(new EmptyBorder(20, 24, 20, 24));
 
         // 1. Header Banner
-        JPanel header = new JPanel(new BorderLayout(10, 0));
-        header.setOpaque(true);
-        header.setBackground(Color.WHITE);
-        header.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(12, 16, 12, 16)
-        ));
+        JPanel header = new JPanel(new BorderLayout(14, 0));
+        header.setBackground(PawTheme.SIDEBAR_BG);
+        header.setBorder(new EmptyBorder(18, 24, 18, 24));
 
-        JLabel iconLabel = new JLabel("🐾");
-        iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 32));
+        JLabel iconLabel = new JLabel(PawIcons.sitter(26, PawTheme.SUNNY));
         header.add(iconLabel, BorderLayout.WEST);
 
-        JPanel headerText = new JPanel(new GridLayout(2, 1, 0, 3));
+        JPanel headerText = new JPanel(new GridLayout(2, 1, 0, 4));
         headerText.setOpaque(false);
         JLabel nameLabel = new JLabel("Approve Sitter: " + sitter.getName());
-        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        nameLabel.setForeground(new Color(30, 41, 59));
+        nameLabel.setFont(PawTheme.FONT_TITLE);
+        nameLabel.setForeground(Color.WHITE);
         headerText.add(nameLabel);
 
         JLabel subLabel = new JLabel("Email: " + sitter.getEmail() + "  |  Phone: " + (sitter.getPhone() != null ? sitter.getPhone() : "-"));
-        subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subLabel.setForeground(new Color(100, 116, 139));
+        subLabel.setFont(PawTheme.FONT_SMALL);
+        subLabel.setForeground(PawTheme.TEXT_SUBTLE);
         headerText.add(subLabel);
         header.add(headerText, BorderLayout.CENTER);
 
         root.add(header, BorderLayout.NORTH);
 
         // 2. Center Content: Uploaded Documents list + Rate input
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 12));
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 14));
         centerPanel.setOpaque(false);
 
         // 2a. Documents section
-        JPanel docsSection = new JPanel(new BorderLayout(0, 6));
+        JPanel docsSection = new JPanel(new BorderLayout(0, 8));
         docsSection.setOpaque(false);
 
         JLabel docsTitle = new JLabel("Submitted Verification Documents (Review proofs before approving):");
-        docsTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        docsTitle.setForeground(new Color(51, 65, 85));
+        docsTitle.setFont(PawTheme.FONT_BODY_BOLD);
+        docsTitle.setForeground(PawTheme.TEXT_TITLE);
         docsSection.add(docsTitle, BorderLayout.NORTH);
 
         docsContainer = new JPanel();
         docsContainer.setLayout(new BoxLayout(docsContainer, BoxLayout.Y_AXIS));
-        docsContainer.setBackground(Color.WHITE);
-        docsContainer.setBorder(new EmptyBorder(8, 8, 8, 8));
+        docsContainer.setBackground(PawTheme.SURFACE);
+        docsContainer.setBorder(new EmptyBorder(12, 12, 12, 12));
 
         loadingLabel = new JLabel("Fetching submitted certificates & ID documents...");
-        loadingLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        loadingLabel.setForeground(new Color(100, 116, 139));
+        loadingLabel.setFont(PawTheme.FONT_SUBTITLE);
+        loadingLabel.setForeground(PawTheme.TEXT_MUTED);
         docsContainer.add(loadingLabel);
 
         JScrollPane docsScroll = new JScrollPane(docsContainer);
-        docsScroll.setPreferredSize(new Dimension(500, 160));
-        docsScroll.setBorder(new LineBorder(new Color(226, 232, 240), 1, true));
+        docsScroll.setPreferredSize(new Dimension(540, 200));
+        docsScroll.setBorder(new LineBorder(PawTheme.BORDER_LIGHT, 1, true));
         docsSection.add(docsScroll, BorderLayout.CENTER);
 
         centerPanel.add(docsSection, BorderLayout.CENTER);
 
         // 2b. Hourly Rate Form Card
-        JPanel rateCard = new JPanel(new BorderLayout(0, 6));
+        JPanel rateCard = new JPanel(new BorderLayout(0, 8));
         rateCard.setOpaque(true);
-        rateCard.setBackground(Color.WHITE);
+        rateCard.setBackground(PawTheme.SUNNY_LIGHT);
         rateCard.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(12, 14, 12, 14)
+                new LineBorder(PawTheme.SUNNY, 1, true),
+                new EmptyBorder(14, 18, 14, 18)
         ));
 
-        JPanel rateInputRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel rateInputRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         rateInputRow.setOpaque(false);
 
         JLabel rateLabel = new JLabel("Set Approved Hourly Rate (₹/hr) *:");
-        rateLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        rateLabel.setForeground(new Color(30, 41, 59));
+        rateLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        rateLabel.setForeground(PawTheme.SUNNY_TEXT);
         rateInputRow.add(rateLabel);
 
         String initialRate = sitter.getHourlyRate() != null ? sitter.getHourlyRate().toString() : "250.00";
         rateField = new JTextField(initialRate, 10);
-        rateField.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        PawTheme.styleField(rateField);
+        rateField.setFont(PawTheme.FONT_BODY_BOLD);
         rateInputRow.add(rateField);
 
         rateCard.add(rateInputRow, BorderLayout.NORTH);
 
-        JLabel hintLabel = new JLabel("💡 Evaluate their experience & qualification certificates above, then set their final booking rate in ₹ INR.");
-        hintLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        hintLabel.setForeground(new Color(100, 116, 139));
+        JLabel hintLabel = new JLabel("Evaluate experience and qualification certificates above, then set their final booking rate in ₹ INR.");
+        hintLabel.setFont(PawTheme.FONT_SMALL);
+        hintLabel.setForeground(PawTheme.TEXT_MUTED);
         rateCard.add(hintLabel, BorderLayout.SOUTH);
 
         centerPanel.add(rateCard, BorderLayout.SOUTH);
@@ -135,19 +135,14 @@ public class ApproveSitterDialog extends JDialog {
         root.add(centerPanel, BorderLayout.CENTER);
 
         // 3. Bottom Actions
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         footer.setOpaque(false);
 
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton cancelButton = new PawComponents.PawButton("Cancel", PawComponents.ButtonStyle.SECONDARY);
         cancelButton.addActionListener(e -> dispose());
         footer.add(cancelButton);
 
-        approveButton = new JButton("✅ Approve Sitter & Save Rate");
-        approveButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        approveButton.setBackground(new Color(16, 185, 129)); // Green
-        approveButton.setForeground(Color.WHITE);
-        approveButton.setFocusable(false);
+        approveButton = new PawComponents.PawButton("Approve Sitter & Save Rate", PawIcons.check(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
         approveButton.addActionListener(e -> handleApproveWithRate());
         footer.add(approveButton);
 
@@ -172,26 +167,48 @@ public class ApproveSitterDialog extends JDialog {
                     List<UserDocumentDTO> docs = get();
                     if (docs == null || docs.isEmpty()) {
                         JLabel noneLabel = new JLabel("No verification documents found for this sitter.");
-                        noneLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-                        noneLabel.setForeground(new Color(156, 163, 175));
+                        noneLabel.setFont(PawTheme.FONT_SUBTITLE);
+                        noneLabel.setForeground(PawTheme.TEXT_SUBTLE);
                         docsContainer.add(noneLabel);
                     } else {
                         for (UserDocumentDTO doc : docs) {
-                            JPanel card = new JPanel(new BorderLayout(10, 0));
-                            card.setBackground(new Color(248, 250, 252));
-                            card.setBorder(BorderFactory.createCompoundBorder(
-                                    BorderFactory.createLineBorder(new Color(226, 232, 240)),
-                                    BorderFactory.createEmptyBorder(6, 10, 6, 10)
-                            ));
+                            PawComponents.PawCard card = new PawComponents.PawCard(10);
+                            card.setLayout(new BorderLayout(12, 0));
+                            card.setBorder(new EmptyBorder(10, 14, 10, 14));
 
-                            String typeDisplay = "ID_CARD".equalsIgnoreCase(doc.getDocumentType()) ? "🪪 ID Card Proof" : "📜 Qualifications Certificate";
-                            JLabel info = new JLabel("<html><b>" + typeDisplay + "</b>: " + doc.getFileName() +
-                                    " <span style='color:#6b7280;'>(" + String.format("%.2f", doc.getFileSize() / (1024.0 * 1024.0)) + " MB)</span></html>");
-                            info.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                            card.add(info, BorderLayout.CENTER);
+                            boolean isId = "ID_CARD".equalsIgnoreCase(doc.getDocumentType());
+                            String typeDisplay = isId ? "Government ID Proof" : "Qualifications Certificate";
+                            Icon docIcon = isId ? PawIcons.idCard(20, PawTheme.INDIGO) : PawIcons.document(20, PawTheme.SUNNY);
+                            if (isId) {
+                                card.setBackgroundTint(PawTheme.INDIGO_LIGHT);
+                                card.setBorderTint(PawTheme.INDIGO);
+                            } else {
+                                card.setBackgroundTint(PawTheme.SUNNY_LIGHT);
+                                card.setBorderTint(PawTheme.SUNNY);
+                            }
 
-                            JButton openBtn = new JButton("🌐 Open PDF");
-                            openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                            JPanel infoCol = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+                            infoCol.setOpaque(false);
+                            infoCol.add(new JLabel(docIcon));
+
+                            JPanel textCol = new JPanel();
+                            textCol.setLayout(new BoxLayout(textCol, BoxLayout.Y_AXIS));
+                            textCol.setOpaque(false);
+
+                            JLabel typeLbl = new JLabel(typeDisplay);
+                            typeLbl.setFont(PawTheme.FONT_BODY_BOLD);
+                            typeLbl.setForeground(PawTheme.TEXT_TITLE);
+                            textCol.add(typeLbl);
+
+                            JLabel fileLbl = new JLabel(doc.getFileName() + " (" + String.format("%.2f", doc.getFileSize() / (1024.0 * 1024.0)) + " MB)");
+                            fileLbl.setFont(PawTheme.FONT_SMALL);
+                            fileLbl.setForeground(PawTheme.TEXT_MUTED);
+                            textCol.add(fileLbl);
+
+                            infoCol.add(textCol);
+                            card.add(infoCol, BorderLayout.CENTER);
+
+                            JButton openBtn = new PawComponents.PawButton("Open PDF", PawIcons.document(13, isId ? PawTheme.INDIGO_TEXT : PawTheme.SUNNY_TEXT), isId ? PawComponents.ButtonStyle.INDIGO : PawComponents.ButtonStyle.SUNNY);
                             openBtn.addActionListener(e -> {
                                 try {
                                     String url = "http://localhost:8080/api/admin/documents/download/" + doc.getId() +
@@ -204,13 +221,13 @@ public class ApproveSitterDialog extends JDialog {
                             card.add(openBtn, BorderLayout.EAST);
 
                             docsContainer.add(card);
-                            docsContainer.add(Box.createVerticalStrut(6));
+                            docsContainer.add(Box.createVerticalStrut(8));
                         }
                     }
                 } catch (Exception ex) {
                     JLabel errLabel = new JLabel("Failed to load documents: " + ex.getMessage());
-                    errLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                    errLabel.setForeground(new Color(239, 68, 68));
+                    errLabel.setFont(PawTheme.FONT_SMALL);
+                    errLabel.setForeground(PawTheme.DANGER);
                     docsContainer.add(errLabel);
                 }
                 docsContainer.revalidate();
@@ -253,13 +270,13 @@ public class ApproveSitterDialog extends JDialog {
                 try {
                     get();
                     dispose();
-                    Dialogs.showSuccess(getParent(), "✓ Sitter '" + sitter.getName() + "' has been approved with hourly rate ₹" + hourlyRate + "/hr!");
+                    Dialogs.showSuccess(getParent(), "Sitter '" + sitter.getName() + "' has been approved with hourly rate ₹" + hourlyRate + "/hr!");
                     if (onSuccess != null) {
                         onSuccess.run();
                     }
                 } catch (Exception ex) {
                     approveButton.setEnabled(true);
-                    approveButton.setText("✅ Approve Sitter & Save Rate");
+                    approveButton.setText("Approve Sitter & Save Rate");
                     Dialogs.showError(ApproveSitterDialog.this, "Failed to approve sitter: " + ex.getMessage());
                 }
             }
@@ -267,4 +284,3 @@ public class ApproveSitterDialog extends JDialog {
         worker.execute();
     }
 }
-

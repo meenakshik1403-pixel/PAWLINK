@@ -5,20 +5,22 @@ import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
 import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.SitterDTO;
 import com.pawlink.vet.model.UserDocumentDTO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Admin Panel for verifying Pet Sitters and reviewing their submitted ID cards and qualifications.
- * Extends BasePanel.
+ * Modernized Admin Panel for verifying Pet Sitters and reviewing their submitted ID cards and qualifications.
+ * Features modern status pills, vector action buttons, and eliminates emoji tofu box artifacts.
  */
 public class AdminSittersPanel extends BasePanel {
 
@@ -28,7 +30,9 @@ public class AdminSittersPanel extends BasePanel {
     private List<SitterDTO> sittersList = new ArrayList<>();
 
     public AdminSittersPanel() {
-        super("✅ Pet Sitter Approvals", "Review submitted credentials, ID cards, and qualification proof to approve Pet Sitters.");
+        super("Pet Sitter Approvals", "Review submitted credentials, ID cards, and qualification proof to approve Pet Sitters.");
+        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
+        setHeaderColor(PawTheme.SUNNY_TEXT);
 
         // Setup Sitters Table
         String[] sitterCols = {"User ID", "Sitter Name", "Email Address", "Phone", "Hourly Rate", "Status"};
@@ -54,75 +58,63 @@ public class AdminSittersPanel extends BasePanel {
 
     private void setupUI() {
         // Global Header Accessory: Refresh and Action buttons
-        JPanel accessory = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel accessory = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         accessory.setOpaque(false);
 
-        JButton refreshBtn = new JButton("🔄 Refresh");
-        refreshBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton refreshBtn = new PawComponents.PawButton("Refresh", PawIcons.refresh(14, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
         refreshBtn.addActionListener(e -> loadSitters());
         accessory.add(refreshBtn);
 
-        JButton viewDocsBtn = new JButton("📄 View Documents");
-        viewDocsBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton viewDocsBtn = new PawComponents.PawButton("View Documents", PawIcons.document(14, PawTheme.INDIGO_TEXT), PawComponents.ButtonStyle.INDIGO);
         viewDocsBtn.addActionListener(e -> handleViewDocuments());
         accessory.add(viewDocsBtn);
 
-        JButton approveBtn = new JButton("✅ Approve Sitter");
-        approveBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        approveBtn.setBackground(new Color(16, 185, 129)); // Green
-        approveBtn.setForeground(Color.WHITE);
-        approveBtn.setFocusable(false);
+        JButton approveBtn = new PawComponents.PawButton("Approve Sitter", PawIcons.check(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
         approveBtn.addActionListener(e -> handleApproveSelected());
         accessory.add(approveBtn);
 
         setHeaderAccessory(accessory);
 
         // Style Table
-        styleTable(sitterTable, 5);
+        PawTheme.styleTable(sitterTable);
+        sitterTable.getColumnModel().getColumn(5).setCellRenderer(new PawComponents.StatusTableCellRenderer());
 
-        // Build Panel
-        JPanel mainPanel = new JPanel(new BorderLayout(0, 10));
-        mainPanel.setOpaque(false);
-        mainPanel.add(new JScrollPane(sitterTable), BorderLayout.CENTER);
+        sitterTable.getColumnModel().getColumn(0).setPreferredWidth(75);
+        sitterTable.getColumnModel().getColumn(0).setMaxWidth(90);
+        sitterTable.getColumnModel().getColumn(1).setPreferredWidth(160);
+        sitterTable.getColumnModel().getColumn(2).setPreferredWidth(200);
+        sitterTable.getColumnModel().getColumn(3).setPreferredWidth(140);
+        sitterTable.getColumnModel().getColumn(4).setPreferredWidth(130);
+        sitterTable.getColumnModel().getColumn(5).setPreferredWidth(120);
 
-        JPanel bottom = new JPanel(new BorderLayout());
+        // Build Panel inside cute PawCard
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
+
+        JScrollPane scrollPane = new JScrollPane(sitterTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        tableCard.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel bottom = new JPanel(new BorderLayout(14, 0));
         bottom.setOpaque(false);
-        bottom.setBorder(new EmptyBorder(6, 6, 6, 6));
-        sitterCountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        sitterCountLabel.setForeground(new Color(100, 116, 139));
-        bottom.add(sitterCountLabel, BorderLayout.WEST);
-        mainPanel.add(bottom, BorderLayout.SOUTH);
+        bottom.setBorder(new EmptyBorder(8, 6, 4, 6));
 
-        setContent(mainPanel);
+        sitterCountLabel.setFont(PawTheme.FONT_SUBTITLE);
+        sitterCountLabel.setForeground(PawTheme.TEXT_MUTED);
+        bottom.add(sitterCountLabel, BorderLayout.WEST);
+
+        JLabel tip = new JLabel("Tip: Click 'Approve Sitter' to inspect uploaded documents and confirm their approved rate.");
+        tip.setFont(PawTheme.FONT_SMALL);
+        tip.setForeground(PawTheme.TEXT_SUBTLE);
+        bottom.add(tip, BorderLayout.EAST);
+
+        tableCard.add(bottom, BorderLayout.SOUTH);
+        setContent(tableCard);
     }
 
-    private void styleTable(JTable table, int statusColIndex) {
-        table.setRowHeight(36);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setShowGrid(true);
-        table.setGridColor(new Color(241, 245, 249));
-
-        table.getColumnModel().getColumn(statusColIndex).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int col) {
-                JLabel l = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, col);
-                l.setHorizontalAlignment(SwingConstants.CENTER);
-                String val = String.valueOf(value);
-                if ("VERIFIED".equals(val)) {
-                    l.setText("✓ Verified");
-                    l.setForeground(new Color(16, 185, 129));
-                    l.setFont(l.getFont().deriveFont(Font.BOLD));
-                } else {
-                    l.setText("⏳ Pending Approval");
-                    l.setForeground(new Color(217, 119, 6));
-                    l.setFont(l.getFont().deriveFont(Font.PLAIN));
-                }
-                return l;
-            }
-        });
+    @Override
+    public void refresh() {
+        loadSitters();
     }
 
     public void loadSitters() {
@@ -187,43 +179,68 @@ public class AdminSittersPanel extends BasePanel {
 
     private void showDocumentsDialog(String name, List<UserDocumentDTO> docs) {
         JDialog docDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Verification Documents - " + name, true);
-        docDialog.setSize(520, 320);
+        docDialog.setSize(620, 420);
         docDialog.setLocationRelativeTo(this);
         docDialog.setLayout(new BorderLayout());
 
         JPanel header = new JPanel(new GridLayout(2, 1, 0, 4));
-        header.setBorder(new EmptyBorder(12, 16, 12, 16));
-        header.setBackground(new Color(238, 242, 255));
+        header.setBorder(new EmptyBorder(16, 22, 16, 22));
+        header.setBackground(PawTheme.SIDEBAR_BG);
 
         JLabel t = new JLabel("Submitted Verification Documents for " + name);
-        t.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        t.setForeground(new Color(67, 56, 202));
+        t.setFont(PawTheme.FONT_SECTION);
+        t.setForeground(Color.WHITE);
         header.add(t);
 
-        JLabel sub = new JLabel("Click any document below to open and inspect the PDF.");
-        sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        sub.setForeground(new Color(107, 114, 128));
+        JLabel sub = new JLabel("Click any document below to inspect the uploaded PDF.");
+        sub.setFont(PawTheme.FONT_SUBTITLE);
+        sub.setForeground(PawTheme.TEXT_SUBTLE);
         header.add(sub);
         docDialog.add(header, BorderLayout.NORTH);
 
         JPanel listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.setBorder(new EmptyBorder(14, 16, 14, 16));
+        listPanel.setBorder(new EmptyBorder(16, 22, 16, 22));
+        listPanel.setBackground(PawTheme.CANVAS);
 
         for (UserDocumentDTO doc : docs) {
-            JPanel card = new JPanel(new BorderLayout(10, 0));
-            card.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(226, 232, 240)),
-                    BorderFactory.createEmptyBorder(8, 12, 8, 12)
-            ));
+            PawComponents.PawCard card = new PawComponents.PawCard(12);
+            card.setLayout(new BorderLayout(14, 0));
+            card.setBorder(new EmptyBorder(12, 16, 12, 16));
 
-            String typeDisplay = "ID_CARD".equalsIgnoreCase(doc.getDocumentType()) ? "🪪 ID Card Proof" : "📜 Qualifications & Experience Certificate";
-            JLabel info = new JLabel("<html><b>" + typeDisplay + "</b><br/>" + doc.getFileName() + " (" + String.format("%.2f", doc.getFileSize() / (1024.0 * 1024.0)) + " MB)</html>");
-            info.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            card.add(info, BorderLayout.CENTER);
+            boolean isId = "ID_CARD".equalsIgnoreCase(doc.getDocumentType());
+            String typeDisplay = isId ? "Government ID Proof" : "Qualifications & Experience Certificate";
+            Icon docIcon = isId ? PawIcons.idCard(22, PawTheme.INDIGO) : PawIcons.document(22, PawTheme.LILAC);
+            if (isId) {
+                card.setBackgroundTint(PawTheme.INDIGO_LIGHT);
+                card.setBorderTint(PawTheme.INDIGO);
+            } else {
+                card.setBackgroundTint(PawTheme.LILAC_LIGHT);
+                card.setBorderTint(PawTheme.LILAC);
+            }
 
-            JButton openBtn = new JButton("🌐 Open PDF");
-            openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            JPanel infoCol = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+            infoCol.setOpaque(false);
+            infoCol.add(new JLabel(docIcon));
+
+            JPanel textCol = new JPanel();
+            textCol.setLayout(new BoxLayout(textCol, BoxLayout.Y_AXIS));
+            textCol.setOpaque(false);
+
+            JLabel typeLbl = new JLabel(typeDisplay);
+            typeLbl.setFont(PawTheme.FONT_BODY_BOLD);
+            typeLbl.setForeground(PawTheme.TEXT_TITLE);
+            textCol.add(typeLbl);
+
+            JLabel fileLbl = new JLabel(doc.getFileName() + " (" + String.format("%.2f", doc.getFileSize() / (1024.0 * 1024.0)) + " MB)");
+            fileLbl.setFont(PawTheme.FONT_SMALL);
+            fileLbl.setForeground(PawTheme.TEXT_MUTED);
+            textCol.add(fileLbl);
+
+            infoCol.add(textCol);
+            card.add(infoCol, BorderLayout.CENTER);
+
+            JButton openBtn = new PawComponents.PawButton("Open PDF", PawIcons.document(13, isId ? PawTheme.INDIGO_TEXT : PawTheme.LILAC_TEXT), isId ? PawComponents.ButtonStyle.INDIGO : PawComponents.ButtonStyle.LILAC);
             openBtn.addActionListener(e -> {
                 try {
                     String url = "http://localhost:8080/api/admin/documents/download/" + doc.getId() + "?adminId=" + Session.getInstance().getUserId();
@@ -235,13 +252,16 @@ public class AdminSittersPanel extends BasePanel {
             card.add(openBtn, BorderLayout.EAST);
 
             listPanel.add(card);
-            listPanel.add(Box.createVerticalStrut(8));
+            listPanel.add(Box.createVerticalStrut(10));
         }
 
         docDialog.add(new JScrollPane(listPanel), BorderLayout.CENTER);
 
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton closeBtn = new JButton("Close");
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 12));
+        footer.setBackground(PawTheme.SURFACE);
+        footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, PawTheme.BORDER_LIGHT));
+
+        JButton closeBtn = new PawComponents.PawButton("Close", PawComponents.ButtonStyle.SECONDARY);
         closeBtn.addActionListener(e -> docDialog.dispose());
         footer.add(closeBtn);
         docDialog.add(footer, BorderLayout.SOUTH);

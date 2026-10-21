@@ -2,16 +2,22 @@ package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.CheckinDTO;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Modal dialog for pet sitters to publish timestamped care check-in updates.
+ * Modernized with pure Java2D vector icons, FlatLaf styling, and micro-animated buttons.
  */
 public class AddCheckinDialog extends JDialog {
 
@@ -19,105 +25,121 @@ public class AddCheckinDialog extends JDialog {
     private final String petName;
     private final Runnable onSuccess;
     private final JTextArea noteArea;
-    private final JButton submitButton;
+    private final PawComponents.PawButton submitButton;
 
     public AddCheckinDialog(Frame parent, Long bookingId, String petName, Runnable onSuccess) {
-        super(parent, "📸 Post Pet Care Check-In - " + (petName != null ? petName : ""), true);
+        super(parent, "Post Pet Care Check-In - " + (petName != null ? petName : ""), true);
         this.bookingId = bookingId;
         this.petName = petName;
         this.onSuccess = onSuccess;
 
         this.noteArea = new JTextArea(5, 30);
-        this.submitButton = new JButton("Publish Check-In Update");
+        this.submitButton = new PawComponents.PawButton("Publish Check-In Update", PawIcons.check(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
 
         initUI();
     }
 
     private void initUI() {
-        setSize(480, 420);
+        setSize(520, 500);
         setLocationRelativeTo(getParent());
         setResizable(false);
         setLayout(new BorderLayout());
 
         // Header
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(30, 41, 59));
-        headerPanel.setBorder(new EmptyBorder(14, 18, 14, 18));
+        JPanel headerPanel = new JPanel(new BorderLayout(14, 0));
+        headerPanel.setBackground(PawTheme.SIDEBAR_BG);
+        headerPanel.setBorder(new EmptyBorder(18, 24, 18, 24));
+
+        JLabel iconLabel = new JLabel(PawIcons.sitter(26, PawTheme.MINT));
+        headerPanel.add(iconLabel, BorderLayout.WEST);
+
+        JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 4));
+        titleBlock.setOpaque(false);
 
         JLabel title = new JLabel("Log Real-Time Care Update");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setFont(PawTheme.FONT_TITLE);
         title.setForeground(Color.WHITE);
-        headerPanel.add(title, BorderLayout.NORTH);
+        titleBlock.add(title);
 
         JLabel sub = new JLabel("Booking #" + bookingId + " for " + (petName != null ? petName : "Pet"));
-        sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        sub.setForeground(new Color(203, 213, 225));
-        headerPanel.add(sub, BorderLayout.SOUTH);
+        sub.setFont(PawTheme.FONT_SMALL);
+        sub.setForeground(PawTheme.TEXT_SUBTLE);
+        titleBlock.add(sub);
 
+        headerPanel.add(titleBlock, BorderLayout.CENTER);
         add(headerPanel, BorderLayout.NORTH);
 
         // Body
-        JPanel bodyPanel = new JPanel(new BorderLayout(0, 10));
-        bodyPanel.setBorder(new EmptyBorder(15, 18, 15, 18));
-        bodyPanel.setBackground(Color.WHITE);
+        JPanel bodyPanel = new JPanel(new BorderLayout(0, 14));
+        bodyPanel.setBorder(new EmptyBorder(18, 24, 18, 24));
+        bodyPanel.setBackground(PawTheme.CANVAS);
 
         // Quick Preset Chips
-        JPanel chipsContainer = new JPanel(new BorderLayout(0, 6));
+        JPanel chipsContainer = new JPanel(new BorderLayout(0, 8));
         chipsContainer.setOpaque(false);
 
-        JLabel presetsLabel = new JLabel("Quick presets (click to append):");
-        presetsLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        presetsLabel.setForeground(new Color(100, 116, 139));
+        JLabel presetsLabel = new JLabel("Quick Presets (tap to add to note):");
+        presetsLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        presetsLabel.setForeground(PawTheme.TEXT_BODY);
         chipsContainer.add(presetsLabel, BorderLayout.NORTH);
 
-        JPanel chipsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
+        JPanel chipsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         chipsPanel.setOpaque(false);
 
-        addQuickChip(chipsPanel, "🍽️ Fed meal & fresh water");
-        addQuickChip(chipsPanel, "🦮 30-min walk completed");
-        addQuickChip(chipsPanel, "💊 Medication administered");
-        addQuickChip(chipsPanel, "🎾 Fun playtime in yard");
-        addQuickChip(chipsPanel, "💤 Resting comfortably");
+        addQuickChip(chipsPanel, PawIcons.bone(13, PawTheme.SUNNY_TEXT), "Fed meal & fresh water", PawTheme.SUNNY_LIGHT, PawTheme.SUNNY_TEXT, PawTheme.SUNNY);
+        addQuickChip(chipsPanel, PawIcons.paw(13, PawTheme.MINT_TEXT), "30-min walk completed", PawTheme.MINT_LIGHT, PawTheme.MINT_TEXT, PawTheme.MINT);
+        addQuickChip(chipsPanel, PawIcons.vaccine(13, PawTheme.SKY_TEXT), "Medication administered", PawTheme.SKY_LIGHT, PawTheme.SKY_TEXT, PawTheme.SKY);
+        addQuickChip(chipsPanel, PawIcons.heart(13, PawTheme.CORAL_TEXT), "Fun playtime in yard", PawTheme.CORAL_LIGHT, PawTheme.CORAL_TEXT, PawTheme.CORAL);
+        addQuickChip(chipsPanel, PawIcons.star(13, PawTheme.LILAC_TEXT), "Resting comfortably", PawTheme.LILAC_LIGHT, PawTheme.LILAC_TEXT, PawTheme.LILAC);
 
         chipsContainer.add(chipsPanel, BorderLayout.CENTER);
         bodyPanel.add(chipsContainer, BorderLayout.NORTH);
 
         // Text area
-        noteArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        noteArea.setFont(PawTheme.FONT_BODY);
         noteArea.setLineWrap(true);
         noteArea.setWrapStyleWord(true);
+        noteArea.setBorder(new EmptyBorder(12, 14, 12, 14));
+
         JScrollPane scrollPane = new JScrollPane(noteArea);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Check-In Note:"));
+        scrollPane.setBorder(new CompoundBorder(
+                new LineBorder(PawTheme.BORDER_STRONG, 1, true),
+                new EmptyBorder(0, 0, 0, 0)
+        ));
         bodyPanel.add(scrollPane, BorderLayout.CENTER);
 
         add(bodyPanel, BorderLayout.CENTER);
 
         // Footer Actions
-        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
-        footerPanel.setBackground(new Color(248, 250, 252));
-        footerPanel.setBorder(new EmptyBorder(4, 15, 8, 15));
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 14));
+        footerPanel.setBackground(PawTheme.SURFACE);
+        footerPanel.setBorder(new CompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, PawTheme.BORDER_LIGHT),
+                new EmptyBorder(8, 20, 10, 20)
+        ));
 
-        JButton cancelBtn = new JButton("Cancel");
-        cancelBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        PawComponents.PawButton cancelBtn = new PawComponents.PawButton("Cancel", PawComponents.ButtonStyle.SECONDARY);
         cancelBtn.addActionListener(e -> dispose());
         footerPanel.add(cancelBtn);
 
-        submitButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        submitButton.setBackground(new Color(16, 185, 129));
-        submitButton.setForeground(Color.WHITE);
-        submitButton.setFocusable(false);
         submitButton.addActionListener(e -> handleSubmit());
         footerPanel.add(submitButton);
 
         add(footerPanel, BorderLayout.SOUTH);
     }
 
-    private void addQuickChip(JPanel container, String text) {
-        JButton chip = new JButton(text);
-        chip.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        chip.setBackground(new Color(241, 245, 249));
-        chip.setForeground(new Color(51, 65, 85));
+    private void addQuickChip(JPanel container, Icon icon, String text, Color bg, Color fg, Color borderColor) {
+        JButton chip = new JButton(text, icon);
+        chip.setFont(PawTheme.FONT_SMALL_BOLD);
+        chip.setBackground(bg);
+        chip.setForeground(fg);
         chip.setFocusable(false);
+        chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        chip.setIconTextGap(6);
+        chip.setBorder(new CompoundBorder(
+                new LineBorder(new Color(borderColor.getRed(), borderColor.getGreen(), borderColor.getBlue(), 120), 1, true),
+                new EmptyBorder(6, 12, 6, 12)
+        ));
         chip.addActionListener(e -> {
             String current = noteArea.getText().trim();
             if (current.isEmpty()) {
@@ -152,10 +174,8 @@ public class AddCheckinDialog extends JDialog {
             protected void done() {
                 submitButton.setEnabled(true);
                 submitButton.setText("Publish Check-In Update");
-
                 try {
                     get();
-                    Dialogs.showSuccess(AddCheckinDialog.this, "Check-in note published successfully!");
                     if (onSuccess != null) {
                         onSuccess.run();
                     }

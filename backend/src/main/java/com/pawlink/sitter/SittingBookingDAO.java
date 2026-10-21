@@ -8,12 +8,10 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -29,48 +27,42 @@ public class SittingBookingDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<SittingBooking> bookingRowMapper = new RowMapper<>() {
-        @Override
-        public SittingBooking mapRow(ResultSet rs, int rowNum) throws SQLException {
-            SittingBooking b = new SittingBooking();
-            b.setId(rs.getLong("id"));
-            b.setPetId(rs.getLong("pet_id"));
-            b.setPetName(rs.getString("pet_name"));
-            b.setSitterId(rs.getLong("sitter_id"));
-            b.setSitterName(rs.getString("sitter_name"));
-            b.setOwnerId(rs.getLong("owner_id"));
-            b.setOwnerName(rs.getString("owner_name"));
+    private final RowMapper<SittingBooking> bookingRowMapper = (rs, rowNum) -> {
+        SittingBooking b = new SittingBooking();
+        b.setId(rs.getLong("id"));
+        b.setPetId(rs.getLong("pet_id"));
+        b.setPetName(rs.getString("pet_name"));
+        b.setSitterId(rs.getLong("sitter_id"));
+        b.setSitterName(rs.getString("sitter_name"));
+        b.setOwnerId(rs.getLong("owner_id"));
+        b.setOwnerName(rs.getString("owner_name"));
 
-            Timestamp startTs = rs.getTimestamp("start_time");
-            b.setStartTime(startTs != null ? startTs.toLocalDateTime() : null);
+        Timestamp startTs = rs.getTimestamp("start_time");
+        b.setStartTime(startTs != null ? startTs.toLocalDateTime() : null);
 
-            Timestamp endTs = rs.getTimestamp("end_time");
-            b.setEndTime(endTs != null ? endTs.toLocalDateTime() : null);
+        Timestamp endTs = rs.getTimestamp("end_time");
+        b.setEndTime(endTs != null ? endTs.toLocalDateTime() : null);
 
-            b.setStatus(rs.getString("status"));
+        b.setStatus(rs.getString("status"));
 
-            Timestamp createdTs = rs.getTimestamp("created_at");
-            b.setCreatedAt(createdTs != null ? createdTs.toLocalDateTime() : null);
+        Timestamp createdTs = rs.getTimestamp("created_at");
+        b.setCreatedAt(createdTs != null ? createdTs.toLocalDateTime() : null);
 
-            b.setHourlyRate(rs.getBigDecimal("hourly_rate"));
-            b.setTotalAmount(rs.getBigDecimal("total_amount"));
-            b.setPaymentStatus(rs.getString("payment_status"));
-            b.setPaymentMethod(rs.getString("payment_method"));
-            return b;
-        }
+        b.setHourlyRate(rs.getBigDecimal("hourly_rate"));
+        b.setTotalAmount(rs.getBigDecimal("total_amount"));
+        b.setPaymentStatus(rs.getString("payment_status"));
+        b.setPaymentMethod(rs.getString("payment_method"));
+        return b;
     };
 
-    private final RowMapper<CheckIn> checkInRowMapper = new RowMapper<>() {
-        @Override
-        public CheckIn mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Timestamp ts = rs.getTimestamp("timestamp");
-            return new CheckIn(
-                    rs.getLong("id"),
-                    rs.getLong("booking_id"),
-                    ts != null ? ts.toLocalDateTime() : null,
-                    rs.getString("note")
-            );
-        }
+    private final RowMapper<CheckIn> checkInRowMapper = (rs, rowNum) -> {
+        Timestamp ts = rs.getTimestamp("timestamp");
+        return new CheckIn(
+                rs.getLong("id"),
+                rs.getLong("booking_id"),
+                ts != null ? ts.toLocalDateTime() : null,
+                rs.getString("note")
+        );
     };
 
     private static final String BASE_SELECT = """
@@ -87,10 +79,11 @@ public class SittingBookingDAO {
 
     private Long extractGeneratedId(KeyHolder keyHolder) {
         if (keyHolder == null) return null;
-        if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {
-            Object idVal = keyHolder.getKeys().get("id");
+        Map<String, Object> keys = keyHolder.getKeys();
+        if (keys != null && !keys.isEmpty()) {
+            Object idVal = keys.get("id");
             if (idVal == null) {
-                idVal = keyHolder.getKeys().get("ID");
+                idVal = keys.get("ID");
             }
             if (idVal instanceof Number num) {
                 return num.longValue();

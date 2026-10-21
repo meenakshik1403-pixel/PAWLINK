@@ -35,6 +35,10 @@ public class Session {
         this.role = role != null ? role.toUpperCase() : null;
     }
 
+    public synchronized void startSession(Long userId, String name, String email, String role) {
+        login(userId, name, email, role);
+    }
+
     public synchronized void logout() {
         this.userId = null;
         this.name = null;

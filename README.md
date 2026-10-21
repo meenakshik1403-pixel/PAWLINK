@@ -12,7 +12,13 @@ PawLink is structured as a modular Maven multi-project repository:
 
 ```
 PAWLINK/
-├── pom.xml                                   # Root Maven parent reactor (JDK 25 LTS target)
+├── pom.xml                                   # Root Maven parent reactor (JDK 25 LTS runtime, release 21 bytecode target)
+├── .devcontainer/                            # Isolated Linux DevContainer environment (JDK 25 LTS, noVNC Swing GUI)
+│   ├── devcontainer.json                     # Container definition & LAN port forwarding (8080 API, 6080 noVNC)
+│   ├── Dockerfile                            # Debian Bookworm container with Java 25 & X11 desktop-lite
+│   ├── docker-compose.yml                    # Persistent Maven dependency volume & service config
+│   ├── setup.sh                              # Automatic build, compile & pre-caching entrypoint
+│   └── README.md                             # DevContainer documentation & LAN access guide
 ├── .env.example                              # Template for environment configuration & admin credentials
 ├── scripts/                                  # Cross-platform execution scripts
 │   ├── run-backend.bat                       # Launch Spring Boot REST API (Windows)
@@ -48,7 +54,7 @@ PAWLINK/
     └── src/main/java/com/pawlink/vet/
         ├── VetApp.java                       # Swing client entrypoint
         ├── api/                              # HTTP client, session state & role headers
-        ├── base/                             # BasePanel, BaseTableModel, theme dialogs
+        ├── base/                             # PawDateTimePicker, PawDatePicker, PawComponents, PawIcons, PawTheme
         ├── model/                            # Data Transfer Objects (DTOs)
         └── view/                             # Role-based panels, dialogs & navigation shell
 ```
@@ -60,28 +66,33 @@ PAWLINK/
 PawLink delivers a cohesive experience tailored to each participant:
 
 ### 🐶 Pet Owners
-* **Pet Registry & Profiles:** Register and manage multiple pets (dogs, cats, birds, etc.) with age, breed, gender, and weight metrics.
+* **Pet Registry & Profiles:** Register and manage multiple pets (dogs, cats, birds, etc.) with age, breed, gender, and weight metrics. Guaranteed duplicate-free list views.
 * **Breed-Specific Care:** Instant breed care recommendations and preventive guidelines.
-* **Veterinary Appointments:** Browse available licensed veterinarians, schedule clinic consultations, and review upcoming/past appointments.
+* **Veterinary Appointments:** Browse available licensed veterinarians, schedule clinic consultations with dynamic slot filtering (automatically omitting passed time slots for today), and review upcoming/past appointments.
 * **Verified Pet Sitter Directory:** Discover vetted sitters filtered strictly by verified status and view approved hourly rates in `₹/hr`.
-* **Booking & Session Tracking:** Book sitter sessions, inspect live check-in updates and notes from sitters, cancel pending requests, or end active sessions.
-* **Automated Payment Settlement:** Ending a sitting session automatically releases payment from the owner's balance to the sitter's wallet.
+* **Tactile Date & Time Selector (`PawDateTimePicker`):** Modern compound date/time picker combining an Android Material calendar modal with 30-minute time intervals, past-time prevention, and one-click duration shortcuts (`+1h`, `+2h`, `+3h`, `+4h`, `+8h`, `Overnight`).
+* **Booking & Session Tracking:** Book sitter sessions with automatic escrow rate estimation, inspect live check-in updates and notes from sitters, cancel pending requests, or end active sessions.
+* **Automated Payment Settlement:** Ending a sitting session automatically releases payment from the owner's balance to the sitter's wallet with escrow protection.
 * **Transaction History:** Real-time billing audit log showing payment methods (Wallet, UPI, Card), reference IDs, and amounts in `₹` INR.
 
 ### 🩺 Veterinarians
 * **Clinic Appointments:** View upcoming consultations, accept/manage patient visits, and review owner contact details.
 * **Medical & Vaccination Timeline:** Maintain medical history records, diagnostic summaries, and vaccination timelines per pet.
-* **Clinical Reminders:** Issue preventive health reminders (deworming, vaccination booster dates, annual check-ups) to pet owners.
+* **Clinical Reminders:** Issue preventive health reminders (deworming, vaccination booster dates, annual check-ups) to pet owners with deduplication safeguards.
 
 ### 🐾 Pet Sitters
 * **Job Dashboard:** View assigned sitting bookings across all lifecycle states (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`).
-* **Live Check-In Feed:** Submit live timestamped check-in notes and activity updates for owners to review in real time.
+* **Live Check-In Feed:** Submit live timestamped check-in notes and activity updates for owners to review in real time. Actions are dynamically disabled and finalized once booking is marked `COMPLETED`.
 * **Profile & Earnings:** Manage profile details and track earned income through approved hourly rates (`₹/hr`).
 
 ### 🛡️ Platform Administrators
 * **Sitter Approval Workflow:** Dedicated tab to review pending sitter registrations, inspect uploaded government ID proofs and qualification certificates (PDF), and confirm or adjust their approved hourly rate (`₹/hr`) prior to activation.
 * **Veterinarian Verification:** Dedicated tab to inspect submitted medical qualifications, license certificates, and identity documents before granting clinical access.
 * **Aggregated System Analytics:** Live metrics dashboard calculating total users by role, clinic consultations per veterinarian, bookings per sitter, and overall platform volume.
+
+### 🎨 Visual & UI Polish
+* **Color-Coded Header Strips:** Consistent branded header accent bar across every view and modal dialog for all four roles.
+* **Pure Vector Icons:** Java2D antialiased vector iconography with crisp rendering at any display DPI.
 
 ---
 
@@ -146,7 +157,7 @@ PawLink delivers a cohesive experience tailored to each participant:
 ## 5. Getting Started
 
 ### Prerequisites
-* **Java Development Kit:** JDK 25 LTS (or JDK 21+ / JDK 26)
+* **Java Development Kit:** JDK 25 LTS (tested with build 25.0.5+9-LTS; bytecode compiler targets `--release 21` for maximum framework stability)
 * **Maven:** Apache Maven 3.9+
 * **Database:** PostgreSQL 15+ (local or Supabase) or automated fallback to in-memory H2
 
@@ -202,6 +213,16 @@ mvn clean test
   mvn package -pl swing-vet -DskipTests
   java -jar swing-vet/target/swing-vet-1.0.0.jar
   ```
+
+#### Option C: DevContainer (Isolated Docker Sandbox)
+1. Open this repository in VS Code with the **Dev Containers** extension installed.
+2. Select **Dev Containers: Reopen in Container** when prompted.
+3. Automatically provisions **Java 25 (JDK 25 LTS)**, caches dependencies in a persistent volume, and exposes:
+   - Backend API: `http://localhost:8080` (or `http://<LAN_IP>:8080`)
+   - Swing Desktop GUI in-browser (noVNC): `http://localhost:6080` (password: `pawlink`)
+4. Run inside the container terminal:
+   - `./scripts/run-backend.sh`
+   - `./scripts/run-swing.sh`
 
 ---
 

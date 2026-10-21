@@ -4,6 +4,10 @@ cd /d "%~dp0.."
 
 if exist "%JAVA_HOME%\bin\javaw.exe" (
     set "JAVAW_BIN=%JAVA_HOME%\bin\javaw.exe"
+) else if exist "C:\Program Files\Java\jdk-25.0.5\bin\javaw.exe" (
+    set "JAVAW_BIN=C:\Program Files\Java\jdk-25.0.5\bin\javaw.exe"
+) else if exist "C:\Program Files\Java\latest\jdk-25\bin\javaw.exe" (
+    set "JAVAW_BIN=C:\Program Files\Java\latest\jdk-25\bin\javaw.exe"
 ) else if exist "C:\Program Files\Java\jdk-25\bin\javaw.exe" (
     set "JAVAW_BIN=C:\Program Files\Java\jdk-25\bin\javaw.exe"
 ) else if exist "C:\Program Files\Java\jdk-26.0.2\bin\javaw.exe" (

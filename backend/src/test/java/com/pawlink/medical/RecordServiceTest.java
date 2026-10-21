@@ -30,9 +30,6 @@ public class RecordServiceTest {
     private MedicalRecordDAO medicalRecordDAO;
 
     @Autowired
-    private VaccinationDAO vaccinationDAO;
-
-    @Autowired
     private UserDAO userDAO;
 
     @Autowired

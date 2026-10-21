@@ -3,17 +3,19 @@ package com.pawlink.vet.view;
 import com.pawlink.vet.api.ApiClient;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
-import com.pawlink.vet.base.Dialogs;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.SitterDTO;
 import com.pawlink.vet.model.SittingBookingDTO;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
 /**
  * Profile panel for pet sitters to review verification status and stats.
+ * Modernized with pure Java2D vector icons, status pills, and high-contrast typography.
  */
 public class SitterProfilePanel extends BasePanel {
 
@@ -21,45 +23,44 @@ public class SitterProfilePanel extends BasePanel {
     private final JLabel emailLabel = new JLabel("-");
     private final JLabel phoneLabel = new JLabel("-");
     private final JLabel rateLabel = new JLabel("-");
-    private final JLabel statusBadge = new JLabel("Checking...");
+    private final JPanel statusBadgeHolder = new JPanel(new FlowLayout(FlowLayout.CENTER));
     private final JLabel totalJobsLabel = new JLabel("0");
 
     public SitterProfilePanel() {
-        super("👤 Sitter Profile & Credentials", "Verify your credentials, review your published rate, and track platform jobs.");
+        super("Sitter Profile & Credentials", "Verify your credentials, review your published rate, and track platform jobs.");
+
+        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
+        setHeaderColor(PawTheme.SUNNY_TEXT);
 
         setupUI();
         loadProfile();
     }
 
     private void setupUI() {
-        JPanel accessory = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel accessory = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         accessory.setOpaque(false);
-        JButton refreshBtn = new JButton("🔄 Refresh");
-        refreshBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        PawComponents.PawButton refreshBtn = new PawComponents.PawButton("Refresh", PawIcons.refresh(13, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
         refreshBtn.addActionListener(e -> loadProfile());
         accessory.add(refreshBtn);
         setHeaderAccessory(accessory);
 
-        JPanel mainCard = new JPanel(new GridBagLayout());
-        mainCard.setBackground(Color.WHITE);
-        mainCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(226, 232, 240)),
-                new EmptyBorder(30, 40, 30, 40)
-        ));
+        statusBadgeHolder.setOpaque(false);
+
+        PawComponents.PawCard mainCard = new PawComponents.PawCard(16);
+        mainCard.setBackgroundTint(PawTheme.SUNNY_LIGHT);
+        mainCard.setBorderTint(PawTheme.SUNNY);
+        mainCard.setLayout(new GridBagLayout());
+        mainCard.setPreferredSize(new Dimension(580, 420));
 
         GridBagConstraints g = new GridBagConstraints();
         g.fill = GridBagConstraints.HORIZONTAL;
-        g.insets = new Insets(10, 15, 10, 15);
+        g.insets = new Insets(12, 24, 12, 24);
         g.gridx = 0;
         g.gridy = 0;
 
         // Status Badge at Top
         g.gridwidth = 2;
-        statusBadge.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        statusBadge.setOpaque(true);
-        statusBadge.setBorder(new EmptyBorder(8, 16, 8, 16));
-        statusBadge.setHorizontalAlignment(SwingConstants.CENTER);
-        mainCard.add(statusBadge, g);
+        mainCard.add(statusBadgeHolder, g);
 
         // Fields
         g.gridwidth = 1;
@@ -67,18 +68,18 @@ public class SitterProfilePanel extends BasePanel {
         addField(mainCard, g, "Full Name:", nameLabel);
 
         g.gridy = 2;
-        addField(mainCard, g, "Email:", emailLabel);
+        addField(mainCard, g, "Email Address:", emailLabel);
 
         g.gridy = 3;
-        addField(mainCard, g, "Phone:", phoneLabel);
+        addField(mainCard, g, "Phone Contact:", phoneLabel);
 
         g.gridy = 4;
-        addField(mainCard, g, "Hourly Rate:", rateLabel);
+        addField(mainCard, g, "Approved Hourly Rate:", rateLabel);
 
         g.gridy = 5;
-        addField(mainCard, g, "Total Assigned Jobs:", totalJobsLabel);
+        addField(mainCard, g, "Total Completed Jobs:", totalJobsLabel);
 
-        JPanel container = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
+        JPanel container = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 28));
         container.setOpaque(false);
         container.add(mainCard);
 
@@ -88,14 +89,19 @@ public class SitterProfilePanel extends BasePanel {
     private void addField(JPanel panel, GridBagConstraints g, String title, JLabel value) {
         g.gridx = 0;
         JLabel l = new JLabel(title);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        l.setForeground(new Color(100, 116, 139));
+        l.setFont(PawTheme.FONT_BODY_BOLD);
+        l.setForeground(PawTheme.TEXT_MUTED);
         panel.add(l, g);
 
         g.gridx = 1;
-        value.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        value.setForeground(new Color(30, 41, 59));
+        value.setFont(PawTheme.FONT_BODY);
+        value.setForeground(PawTheme.TEXT_TITLE);
         panel.add(value, g);
+    }
+
+    @Override
+    public void refresh() {
+        loadProfile();
     }
 
     public void loadProfile() {
@@ -108,7 +114,6 @@ public class SitterProfilePanel extends BasePanel {
                 try {
                     return ApiClient.getInstance().get("/api/sitters/" + userId, SitterDTO.class);
                 } catch (Exception ex) {
-                    // Fallback to searching in list
                     List<SitterDTO> list = ApiClient.getInstance().getList("/api/sitters", SitterDTO.class);
                     for (SitterDTO s : list) {
                         if (userId.equals(s.getUserId())) return s;
@@ -126,15 +131,16 @@ public class SitterProfilePanel extends BasePanel {
                     phoneLabel.setText(s.getPhone() != null ? s.getPhone() : "Not provided");
                     rateLabel.setText("₹" + (s.getHourlyRate() != null ? s.getHourlyRate() : "250.00") + " / hour");
 
+                    statusBadgeHolder.removeAll();
                     if (s.isVerified()) {
-                        statusBadge.setText("✓ VERIFIED PET SITTER (Eligible for bookings)");
-                        statusBadge.setBackground(new Color(209, 250, 229)); // Light Green
-                        statusBadge.setForeground(new Color(6, 95, 70));
+                        statusBadgeHolder.add(new PawComponents.StatusPill("VERIFIED PET SITTER (Eligible for bookings)",
+                                PawTheme.SUCCESS_LIGHT, PawTheme.SUCCESS_TEXT, PawTheme.SUCCESS));
                     } else {
-                        statusBadge.setText("⏳ PENDING VERIFICATION (Awaiting Admin Approval)");
-                        statusBadge.setBackground(new Color(254, 243, 199)); // Light Yellow
-                        statusBadge.setForeground(new Color(146, 64, 14));
+                        statusBadgeHolder.add(new PawComponents.StatusPill("PENDING VERIFICATION (Awaiting Admin Approval)",
+                                PawTheme.WARNING_LIGHT, PawTheme.WARNING_TEXT, PawTheme.WARNING));
                     }
+                    statusBadgeHolder.revalidate();
+                    statusBadgeHolder.repaint();
 
                     // Count jobs
                     List<SittingBookingDTO> jobs = ApiClient.getInstance().getList("/api/sitter-bookings?sitterId=" + userId, SittingBookingDTO.class);
@@ -142,9 +148,10 @@ public class SitterProfilePanel extends BasePanel {
                 } catch (Exception ex) {
                     nameLabel.setText(Session.getInstance().getName() != null ? Session.getInstance().getName() : "Sitter");
                     emailLabel.setText(Session.getInstance().getEmail() != null ? Session.getInstance().getEmail() : "-");
-                    statusBadge.setText("⏳ Status Pending");
-                    statusBadge.setBackground(new Color(241, 245, 249));
-                    statusBadge.setForeground(new Color(100, 116, 139));
+                    statusBadgeHolder.removeAll();
+                    statusBadgeHolder.add(new PawComponents.StatusPill("STATUS PENDING", PawTheme.SURFACE_MUTED, PawTheme.TEXT_MUTED, PawTheme.TEXT_MUTED));
+                    statusBadgeHolder.revalidate();
+                    statusBadgeHolder.repaint();
                 }
             }
         };

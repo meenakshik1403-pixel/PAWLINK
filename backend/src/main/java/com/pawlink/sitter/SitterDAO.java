@@ -5,8 +5,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,19 +21,14 @@ public class SitterDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<Sitter> sitterRowMapper = new RowMapper<>() {
-        @Override
-        public Sitter mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return new Sitter(
-                    rs.getLong("user_id"),
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("phone"),
-                    rs.getBigDecimal("hourly_rate"),
-                    rs.getBoolean("verified")
-            );
-        }
-    };
+    private final RowMapper<Sitter> sitterRowMapper = (rs, rowNum) -> new Sitter(
+            rs.getLong("user_id"),
+            rs.getString("name"),
+            rs.getString("email"),
+            rs.getString("phone"),
+            rs.getBigDecimal("hourly_rate"),
+            rs.getBoolean("verified")
+    );
 
     /**
      * Checks if a sitter is verified by ID.

@@ -1,10 +1,13 @@
 package com.pawlink.vet.view;
 
 import com.pawlink.vet.api.ApiClient;
-import com.pawlink.vet.api.ApiException;
 import com.pawlink.vet.api.Session;
 import com.pawlink.vet.base.BasePanel;
 import com.pawlink.vet.base.BaseTableModel;
+import com.pawlink.vet.base.PawComponents;
+import com.pawlink.vet.base.PawDatePicker;
+import com.pawlink.vet.base.PawIcons;
+import com.pawlink.vet.base.PawTheme;
 import com.pawlink.vet.model.AppointmentDTO;
 import com.pawlink.vet.model.UserDTO;
 
@@ -12,7 +15,6 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ import java.util.Map;
 public class AppointmentsPanel extends BasePanel {
 
     private final JComboBox<String> dateQuickSelect;
-    private final JTextField dateField;
+    private final PawDatePicker dateField;
     private final JComboBox<String> doctorFilterComboBox;
     private final Map<Integer, Long> doctorIndexToId = new HashMap<>();
     private final JButton loadButton;
@@ -53,19 +55,15 @@ public class AppointmentsPanel extends BasePanel {
         );
         this.session = Session.getInstance();
 
-        // 1. Date filter setup
-        String[] dateOptions;
-        if (session.isVet()) {
-            dateOptions = new String[]{"Today", "Tomorrow", "Next 7 Days", "All Dates", "Custom Date"};
-        } else {
-            dateOptions = new String[]{"All Dates", "Today", "Tomorrow", "Custom Date"};
-        }
+        // 1. Date filter setup - defaults to Today for all roles
+        String[] dateOptions = {"Today", "Tomorrow", "Next 7 Days", "All Dates", "Custom Date"};
         dateQuickSelect = new JComboBox<>(dateOptions);
         dateQuickSelect.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        dateQuickSelect.setSelectedItem("Today");
 
-        dateField = new JTextField(session.isVet() ? LocalDate.now().toString() : "", 10);
-        dateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        dateField.setEnabled("Custom Date".equals(dateQuickSelect.getSelectedItem()));
+        dateField = new PawDatePicker(LocalDate.now());
+        dateField.setAccentColor(PawTheme.SKY);
+        dateField.setEnabled(false);
 
         // 2. Doctor selection (dropdown for Owner/Admin, label for Vet)
         doctorFilterComboBox = new JComboBox<>();
@@ -73,87 +71,57 @@ public class AppointmentsPanel extends BasePanel {
         doctorFilterComboBox.addItem("All Doctors");
         doctorIndexToId.put(0, null);
 
-        // Buttons
-        loadButton = new JButton("Refresh");
-        loadButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        loadButton.setBackground(new Color(13, 148, 136)); // Teal
-        loadButton.setForeground(Color.WHITE);
-        loadButton.setFocusPainted(false);
-        loadButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        // Modern Tactile Buttons
+        loadButton = new PawComponents.PawButton("Refresh", PawIcons.refresh(13, PawTheme.TEXT_BODY), PawComponents.ButtonStyle.SECONDARY);
 
-        bookNewButton = new JButton("➕ Book Appointment");
-        bookNewButton.setFont(new Font("Segoe UI", Font.BOLD, session.isOwner() ? 14 : 12));
-        bookNewButton.setBackground(new Color(37, 99, 235)); // Blue
-        bookNewButton.setForeground(Color.WHITE);
-        bookNewButton.setFocusPainted(false);
-        bookNewButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        bookNewButton = new PawComponents.PawButton("Book Appointment", PawIcons.plus(15, Color.WHITE), PawComponents.ButtonStyle.CORAL);
         if (session.isOwner()) {
-            bookNewButton.setPreferredSize(new Dimension(190, 42));
-            bookNewButton.setBorder(new EmptyBorder(8, 16, 8, 16));
+            bookNewButton.setPreferredSize(new Dimension(195, 42));
             setHeaderAccessory(bookNewButton);
         }
 
         JPanel topBar = createTopBar();
 
-        // 3. Center Table Configuration
+        // 3. Center Table Configuration inside PawCard
         tableModel = new AppointmentTableModel();
         appointmentTable = new JTable(tableModel);
-        appointmentTable.setRowHeight(36);
-        appointmentTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        appointmentTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        appointmentTable.getTableHeader().setBackground(new Color(241, 245, 249));
-        appointmentTable.getTableHeader().setForeground(new Color(30, 41, 59));
-        appointmentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        appointmentTable.setShowGrid(true);
-        appointmentTable.setGridColor(new Color(226, 232, 240));
-
+        PawTheme.styleTable(appointmentTable);
         setupTableRenderers();
 
         JScrollPane scrollPane = new JScrollPane(appointmentTable);
-        scrollPane.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(0, 0, 0, 0)
-        ));
+        scrollPane.setBorder(BorderFactory.createLineBorder(PawTheme.BORDER_LIGHT));
+        scrollPane.getViewport().setBackground(PawTheme.SURFACE);
 
         // 4. Bottom Action Buttons & Status Hint
         statusHintLabel = new JLabel("Loading appointments...");
-        statusHintLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        statusHintLabel.setForeground(new Color(100, 116, 139));
+        statusHintLabel.setFont(PawTheme.FONT_BODY);
+        statusHintLabel.setForeground(PawTheme.TEXT_MUTED);
 
-        confirmButton = new JButton("✅ Confirm Slot");
-        confirmButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        confirmButton.setBackground(new Color(22, 163, 74)); // Green
-        confirmButton.setForeground(Color.WHITE);
-        confirmButton.setFocusPainted(false);
+        confirmButton = new PawComponents.PawButton("Confirm Slot", PawIcons.check(14, Color.WHITE), PawComponents.ButtonStyle.MINT);
         confirmButton.setEnabled(false);
-        confirmButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        completeButton = new JButton("🩺 Mark Completed");
-        completeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        completeButton.setBackground(new Color(14, 116, 144)); // Cyan/Slate
-        completeButton.setForeground(Color.WHITE);
-        completeButton.setFocusPainted(false);
+        completeButton = new PawComponents.PawButton("Mark Completed", PawIcons.stethoscope(14, Color.WHITE), PawComponents.ButtonStyle.SKY);
         completeButton.setEnabled(false);
-        completeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        cancelButton = new JButton("❌ Cancel Booking");
-        cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        cancelButton.setBackground(new Color(220, 38, 38)); // Red
-        cancelButton.setForeground(Color.WHITE);
-        cancelButton.setFocusPainted(false);
+        cancelButton = new PawComponents.PawButton("Cancel Booking", PawIcons.cross(14, Color.WHITE), PawComponents.ButtonStyle.DANGER);
         cancelButton.setEnabled(false);
-        cancelButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JPanel bottomBar = createBottomBar();
 
+        PawComponents.PawCard tableCard = new PawComponents.PawCard();
+        tableCard.setLayout(new BorderLayout(0, 10));
+        tableCard.add(scrollPane, BorderLayout.CENTER);
+        tableCard.add(bottomBar, BorderLayout.SOUTH);
+
         // Assemble Content
-        JPanel mainContainer = new JPanel(new BorderLayout(0, 12));
+        JPanel mainContainer = new JPanel(new BorderLayout(0, 16));
         mainContainer.setOpaque(false);
         mainContainer.add(topBar, BorderLayout.NORTH);
-        mainContainer.add(scrollPane, BorderLayout.CENTER);
-        mainContainer.add(bottomBar, BorderLayout.SOUTH);
+        mainContainer.add(tableCard, BorderLayout.CENTER);
 
         setContent(mainContainer);
+        setHeaderIcon(PawIcons.calendar(24, PawTheme.SKY));
+        setHeaderColor(PawTheme.SKY_TEXT);
 
         // Listeners & Initial Load
         initListeners();
@@ -164,11 +132,11 @@ public class AppointmentsPanel extends BasePanel {
     private static String getAdaptiveTitle() {
         Session s = Session.getInstance();
         if (s.isOwner()) {
-            return "🏥 My Pet Appointments";
+            return "My Pet Appointments";
         } else if (s.isVet()) {
-            return "📅 Clinical Consultations & Schedule";
+            return "Clinical Consultations & Schedule";
         } else {
-            return "📅 Clinic Appointments & Scheduling";
+            return "Clinic Appointments & Scheduling";
         }
     }
 
@@ -184,34 +152,42 @@ public class AppointmentsPanel extends BasePanel {
     }
 
     private JPanel createTopBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
-        bar.setBackground(Color.WHITE);
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 8));
+        bar.setBackground(PawTheme.SURFACE);
         bar.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(8, 12, 8, 12)
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(12, 16, 12, 16)
         ));
 
         if (session.isVet()) {
             JLabel doctorBadge = new JLabel("Doctor: " + (session.getName() != null ? session.getName() : "Dr. Sarah"));
-            doctorBadge.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            doctorBadge.setForeground(new Color(13, 148, 136));
+            doctorBadge.setFont(PawTheme.FONT_BODY_BOLD);
+            doctorBadge.setForeground(PawTheme.SKY);
             bar.add(doctorBadge);
 
             JSeparator sep0 = new JSeparator(SwingConstants.VERTICAL);
-            sep0.setPreferredSize(new Dimension(2, 24));
+            sep0.setPreferredSize(new Dimension(1, 26));
+            sep0.setForeground(PawTheme.BORDER_LIGHT);
             bar.add(sep0);
         } else {
             // For Owner or Admin, show doctor filter dropdown
             JLabel docLabel = new JLabel("Doctor:");
-            docLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            docLabel.setFont(PawTheme.FONT_BODY_BOLD);
+            docLabel.setForeground(PawTheme.TEXT_BODY);
             bar.add(docLabel);
+            doctorFilterComboBox.setPreferredSize(new Dimension(180, 38));
             bar.add(doctorFilterComboBox);
         }
 
         JLabel filterLabel = new JLabel("Date:");
-        filterLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        filterLabel.setFont(PawTheme.FONT_BODY_BOLD);
+        filterLabel.setForeground(PawTheme.TEXT_BODY);
         bar.add(filterLabel);
+
+        dateQuickSelect.setPreferredSize(new Dimension(150, 38));
         bar.add(dateQuickSelect);
+
+        dateField.setPreferredSize(new Dimension(160, 38));
         bar.add(dateField);
 
         bar.add(loadButton);
@@ -220,16 +196,16 @@ public class AppointmentsPanel extends BasePanel {
     }
 
     private JPanel createBottomBar() {
-        JPanel bar = new JPanel(new BorderLayout(12, 0));
-        bar.setBackground(Color.WHITE);
+        JPanel bar = new JPanel(new BorderLayout(14, 0));
+        bar.setBackground(PawTheme.SURFACE);
         bar.setBorder(new CompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(8, 14, 8, 14)
+                new LineBorder(PawTheme.BORDER_LIGHT, 1, true),
+                new EmptyBorder(12, 18, 12, 18)
         ));
 
         bar.add(statusHintLabel, BorderLayout.WEST);
 
-        JPanel actionGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel actionGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         actionGroup.setOpaque(false);
 
         // Owners only cancel; Vets and Admins can Confirm, Complete, and Cancel
@@ -244,43 +220,8 @@ public class AppointmentsPanel extends BasePanel {
     }
 
     private void setupTableRenderers() {
-        // Status Badge Renderer
-        appointmentTable.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                String status = value != null ? value.toString() : "";
-
-                if (!isSelected) {
-                    switch (status.toUpperCase()) {
-                        case "CONFIRMED" -> {
-                            label.setBackground(new Color(220, 252, 231)); // light green
-                            label.setForeground(new Color(22, 101, 52));   // dark green
-                        }
-                        case "PENDING" -> {
-                            label.setBackground(new Color(254, 243, 199)); // light amber
-                            label.setForeground(new Color(180, 83, 9));    // dark amber
-                        }
-                        case "COMPLETED" -> {
-                            label.setBackground(new Color(224, 242, 254)); // light blue
-                            label.setForeground(new Color(3, 105, 161));   // dark blue
-                        }
-                        case "CANCELLED" -> {
-                            label.setBackground(new Color(254, 226, 226)); // light red
-                            label.setForeground(new Color(185, 28, 28));   // dark red
-                        }
-                        default -> {
-                            label.setBackground(Color.WHITE);
-                            label.setForeground(Color.BLACK);
-                        }
-                    }
-                    label.setOpaque(true);
-                }
-                return label;
-            }
-        });
+        // Modern Pill Status Badge Renderer
+        appointmentTable.getColumnModel().getColumn(5).setCellRenderer(new PawComponents.StatusTableCellRenderer());
 
         // Column widths
         appointmentTable.getColumnModel().getColumn(0).setPreferredWidth(60);  // ID
@@ -295,19 +236,24 @@ public class AppointmentsPanel extends BasePanel {
         dateQuickSelect.addActionListener(e -> {
             String selected = (String) dateQuickSelect.getSelectedItem();
             if ("Today".equals(selected)) {
-                dateField.setText(LocalDate.now().toString());
+                dateField.setDate(LocalDate.now());
                 dateField.setEnabled(false);
             } else if ("Tomorrow".equals(selected)) {
-                dateField.setText(LocalDate.now().plusDays(1).toString());
+                dateField.setDate(LocalDate.now().plusDays(1));
                 dateField.setEnabled(false);
             } else if ("Next 7 Days".equals(selected) || "All Dates".equals(selected)) {
-                dateField.setText("");
+                dateField.setDate(null);
                 dateField.setEnabled(false);
             } else {
                 dateField.setEnabled(true);
-                dateField.requestFocusInWindow();
+                if (dateField.getDate() == null) {
+                    dateField.setDate(LocalDate.now());
+                }
             }
+            loadAppointments();
         });
+
+        dateField.addDateChangeListener(d -> loadAppointments());
 
         loadButton.addActionListener(e -> loadAppointments());
 
@@ -377,17 +323,21 @@ public class AppointmentsPanel extends BasePanel {
             }
         }
 
-        String dateText = dateField.getText().trim();
-        if (!dateText.isEmpty()) {
-            try {
-                LocalDate.parse(dateText);
-                params.add("date=" + dateText);
-            } catch (Exception ignored) {}
-        } else if ("Today".equals(dateQuickSelect.getSelectedItem())) {
+        String selectedOption = (String) dateQuickSelect.getSelectedItem();
+        if ("Today".equals(selectedOption)) {
             params.add("date=today");
-        } else if ("Tomorrow".equals(dateQuickSelect.getSelectedItem())) {
+        } else if ("Tomorrow".equals(selectedOption)) {
             params.add("date=tomorrow");
+        } else if ("Custom Date".equals(selectedOption)) {
+            String dateText = dateField.getText().trim();
+            if (!dateText.isEmpty()) {
+                try {
+                    LocalDate.parse(dateText);
+                    params.add("date=" + dateText);
+                } catch (Exception ignored) {}
+            }
         }
+        // "All Dates" and "Next 7 Days" fetch all relevant appointments without single-date restriction
 
         if (!params.isEmpty()) {
             url.append("?").append(String.join("&", params));
@@ -482,6 +432,11 @@ public class AppointmentsPanel extends BasePanel {
             }
         };
         worker.execute();
+    }
+
+    @Override
+    public void refresh() {
+        loadAppointments();
     }
 
     /**

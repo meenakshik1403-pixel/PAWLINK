@@ -27,7 +27,7 @@ fi
 mkdir -p "$HOME/.m2/repository"
 
 # Make helper scripts executable
-chmod +x .devcontainer/scripts/*.sh || true
+chmod +x scripts/*.sh || true
 
 # If mvn is still not found, auto-install it via apt
 if ! command -v mvn > /dev/null 2>&1; then
@@ -51,14 +51,14 @@ fi
 
 echo ""
 echo "=========================================================="
-echo "🎉 PawLink DevContainer Ready!"
+echo "🎉 PawLink DevContainer Ready! (Running Java 25 LTS)"
 echo "----------------------------------------------------------"
 echo "🌐 LAN & Local Accessible Endpoints:"
 echo "   • Backend REST API:  http://localhost:8080 (or http://<YOUR_LAN_IP>:8080)"
 echo "   • Swing Desktop GUI: http://localhost:6080 (or http://<YOUR_LAN_IP>:6080)"
 echo "----------------------------------------------------------"
 echo "🚀 Quick Run Scripts:"
-echo "   • Backend:    ./.devcontainer/scripts/run-backend.sh"
-echo "   • Swing App:  ./.devcontainer/scripts/run-swing.sh"
+echo "   • Backend:    ./scripts/run-backend.sh"
+echo "   • Swing App:  ./scripts/run-swing.sh"
 echo "----------------------------------------------------------"
 echo "=========================================================="
