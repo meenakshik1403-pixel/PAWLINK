@@ -66,12 +66,12 @@ public class PaymentControllerTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var sitter = UserFactory.createUser("SITTER", null, "Emily Watson", "emily.payment@pawlink.com", "555-0201", "hash", LocalDateTime.now());
+        var sitter = UserFactory.createUser("SITTER", null, "Emily Johnson", "emily.payment@pawlink.com", "555-0201", "hash", LocalDateTime.now());
         userDAO.insert(sitter);
         sitterId = sitter.getUserId();
         sitterDAO.saveSitter(sitterId, BigDecimal.valueOf(35.00), true);
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john.payment@pawlink.com", "555-0301", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john.payment@pawlink.com", "555-0301", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 
@@ -107,7 +107,7 @@ public class PaymentControllerTest {
                 .andExpect(jsonPath("$[0].status", is("HELD")))
                 .andExpect(jsonPath("$[0].amount", is(105.0)))
                 .andExpect(jsonPath("$[0].petName", is("Max")))
-                .andExpect(jsonPath("$[0].sitterName", is("Emily Watson")));
+                .andExpect(jsonPath("$[0].sitterName", is("Emily Johnson")));
     }
 
     @Test

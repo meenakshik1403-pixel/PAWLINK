@@ -288,40 +288,6 @@ public class MainFrame extends JFrame {
         leftTitle.add(currentViewTitleLabel);
         topContextBar.add(leftTitle, BorderLayout.WEST);
 
-        // Right status chip
-        JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
-        rightActions.setOpaque(false);
-
-        JPanel statusChip = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                try {
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(Color.WHITE);
-                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), getHeight(), getHeight()));
-
-                    g2.setColor(new Color(0, 0, 0, 30));
-                    g2.draw(new RoundRectangle2D.Double(0, 0, getWidth() - 1, getHeight() - 1, getHeight(), getHeight()));
-                } finally {
-                    g2.dispose();
-                }
-            }
-        };
-        statusChip.setOpaque(false);
-        statusChip.setBorder(new EmptyBorder(3, 10, 3, 12));
-
-        JLabel dot = new JLabel(PawIcons.dot(8, PawTheme.MINT));
-        statusChip.add(dot);
-
-        JLabel liveText = new JLabel("Online · REST Active");
-        liveText.setFont(PawTheme.FONT_SMALL_BOLD);
-        liveText.setForeground(PawTheme.MINT_TEXT);
-        statusChip.add(liveText);
-
-        rightActions.add(statusChip);
-        topContextBar.add(rightActions, BorderLayout.EAST);
-
         return topContextBar;
     }
 
@@ -368,11 +334,11 @@ public class MainFrame extends JFrame {
 
         switch (role) {
             case "VET" -> {
-                registerTab("Dashboard", PawIcons.stats(18, PawTheme.SUNNY), PawTheme.SUNNY, new DashboardPanel());
+                registerTab("Dashboard", PawIcons.stats(18, PawTheme.PRIMARY), PawTheme.PRIMARY, new DashboardPanel());
                 registerTab("Appointments", PawIcons.calendar(18, PawTheme.SKY), PawTheme.SKY, new AppointmentsPanel());
                 registerTab("Medical & Vaccines", PawIcons.medicalRecord(18, PawTheme.LILAC), PawTheme.LILAC, new RecordsPanel());
                 registerTab("Patients & Pets", PawIcons.paw(18, PawTheme.CORAL), PawTheme.CORAL, new PetsPanel());
-                registerTab("Reminders", PawIcons.bell(18, PawTheme.MINT), PawTheme.MINT, new RemindersPanel());
+                registerTab("Reminders", PawIcons.bell(18, PawTheme.SUNNY), PawTheme.SUNNY, new RemindersPanel());
             }
             case "OWNER" -> {
                 registerTab("My Pets", PawIcons.paw(18, PawTheme.CORAL), PawTheme.CORAL, new OwnerPetsPanel());
@@ -401,6 +367,10 @@ public class MainFrame extends JFrame {
         String cleanTitle = BasePanel.cleanEmoji(title);
         int index = navButtons.size();
         String cardName = "card_" + index;
+
+        if (component instanceof BasePanel bp) {
+            bp.setHeaderColor(accentColor);
+        }
 
         contentCards.add(component, cardName);
         tabComponents.add(component);

@@ -14,7 +14,7 @@
 
     <modules>
         <module>backend</module>
-        <module>swing-vet</module>
+        <module>swing-client</module>
     </modules>
 
     <properties>

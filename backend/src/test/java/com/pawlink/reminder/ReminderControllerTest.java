@@ -59,7 +59,7 @@ public class ReminderControllerTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@pawlink.com", "+1-555-0202", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@pawlink.com", "+1-555-0202", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 

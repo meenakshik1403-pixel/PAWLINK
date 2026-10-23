@@ -64,23 +64,23 @@ public class SitterBookingControllerTest {
         jdbcTemplate.update("DELETE FROM users");
 
         // Verified Sitter
-        var sitter1 = UserFactory.createUser("SITTER", null, "Emily Watson", "emily.sitter@pawlink.com", "555-0201", "hash", LocalDateTime.now());
+        var sitter1 = UserFactory.createUser("SITTER", null, "Emily Johnson", "emily.sitter@pawlink.com", "555-0201", "hash", LocalDateTime.now());
         userDAO.insert(sitter1);
         verifiedSitterId = sitter1.getUserId();
         sitterDAO.saveSitter(verifiedSitterId, BigDecimal.valueOf(30.00), true);
 
         // Unverified Sitter
-        var sitter2 = UserFactory.createUser("SITTER", null, "David Clark", "david.sitter@pawlink.com", "555-0202", "hash", LocalDateTime.now());
+        var sitter2 = UserFactory.createUser("SITTER", null, "Pramod S P", "david.sitter@pawlink.com", "555-0202", "hash", LocalDateTime.now());
         userDAO.insert(sitter2);
         unverifiedSitterId = sitter2.getUserId();
         sitterDAO.saveSitter(unverifiedSitterId, BigDecimal.valueOf(20.00), false);
 
         // Owner & Pet
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john.owner@pawlink.com", "555-0301", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john.owner@pawlink.com", "555-0301", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 
-        var pet = PetFactory.createPet("Dog", "Buddy", LocalDate.of(2021, 5, 10), ownerId);
+        var pet = PetFactory.createPet("Dog", "Bruno", LocalDate.of(2021, 5, 10), ownerId);
         petDAO.insert(pet);
         petId = pet.getPetId();
     }
@@ -91,7 +91,7 @@ public class SitterBookingControllerTest {
         mockMvc.perform(get("/api/sitters"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name", is("Emily Watson")))
+                .andExpect(jsonPath("$[0].name", is("Emily Johnson")))
                 .andExpect(jsonPath("$[0].verified", is(true)));
     }
 
@@ -113,8 +113,8 @@ public class SitterBookingControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.sitterName", is("Emily Watson")))
-                .andExpect(jsonPath("$.petName", is("Buddy")))
+                .andExpect(jsonPath("$.sitterName", is("Emily Johnson")))
+                .andExpect(jsonPath("$.petName", is("Bruno")))
                 .andExpect(jsonPath("$.status", is("CONFIRMED")))
                 .andExpect(jsonPath("$.paymentStatus", is("HELD")))
                 .andExpect(jsonPath("$.totalAmount", is(120.0)));

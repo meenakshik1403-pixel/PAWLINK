@@ -11,9 +11,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>swing-vet</artifactId>
+    <artifactId>swing-client</artifactId>
     <version>1.0.0</version>
-    <name>PawLink Swing Desktop Application</name>
+    <name>PawLink Swing Desktop Client</name>
     <description>Unified Java Swing Desktop Client with Role-based Navigation</description>
 
     <dependencies>

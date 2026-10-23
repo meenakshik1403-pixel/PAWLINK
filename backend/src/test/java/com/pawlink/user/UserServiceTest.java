@@ -45,8 +45,8 @@ public class UserServiceTest {
     @DisplayName("Should register new user and hash password with BCrypt")
     void testRegisterUser() {
         RegisterRequest req = new RegisterRequest(
-                "Dr. Sarah Jenkins",
-                "vet.sarah@pawlink.com",
+                "Dr. Sreekumar",
+                "vet.sreekumar@pawlink.com",
                 "password123",
                 "+919876543101",
                 "VET"
@@ -55,8 +55,8 @@ public class UserServiceTest {
         AuthResponse res = userService.register(req);
         assertNotNull(res);
         assertNotNull(res.getId());
-        assertEquals("Dr. Sarah Jenkins", res.getName());
-        assertEquals("vet.sarah@pawlink.com", res.getEmail());
+        assertEquals("Dr. Sreekumar", res.getName());
+        assertEquals("vet.sreekumar@pawlink.com", res.getEmail());
         assertEquals("VET", res.getRole());
 
         // Verify in database that password is not stored plaintext
@@ -89,7 +89,7 @@ public class UserServiceTest {
     @DisplayName("Should successfully authenticate valid credentials for approved user")
     void testLoginSuccess() {
         RegisterRequest regReq = new RegisterRequest(
-                "Emily Watson",
+                "Emily Johnson",
                 "sitter.emily@pawlink.com",
                 "password123",
                 "+919876543201",
@@ -104,7 +104,7 @@ public class UserServiceTest {
         AuthResponse loginRes = userService.login(loginReq);
 
         assertNotNull(loginRes);
-        assertEquals("Emily Watson", loginRes.getName());
+        assertEquals("Emily Johnson", loginRes.getName());
         assertEquals("SITTER", loginRes.getRole());
     }
 

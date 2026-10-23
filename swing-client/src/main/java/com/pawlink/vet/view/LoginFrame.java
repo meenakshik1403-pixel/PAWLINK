@@ -201,7 +201,7 @@ public class LoginFrame extends JFrame {
         panel.add(emailLbl);
         panel.add(Box.createVerticalStrut(4));
 
-        emailField = new JTextField("vet.sarah@pawlink.com");
+        emailField = new JTextField("vet.sreekumar@pawlink.com");
         PawTheme.styleField(emailField);
         emailField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         emailField.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -267,7 +267,7 @@ public class LoginFrame extends JFrame {
         demoGroup.setOpaque(false);
         demoGroup.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        demoGroup.add(createDemoPill("Dr. Sarah (Vet)", "vet.sarah@pawlink.com", "password123", PawTheme.SKY_LIGHT, PawTheme.SKY_TEXT, PawTheme.SKY, PawIcons.stethoscope(13, PawTheme.SKY_TEXT)));
+        demoGroup.add(createDemoPill("Dr. Sreekumar (Vet)", "vet.sreekumar@pawlink.com", "password123", PawTheme.SKY_LIGHT, PawTheme.SKY_TEXT, PawTheme.SKY, PawIcons.stethoscope(13, PawTheme.SKY_TEXT)));
         demoGroup.add(createDemoPill("John (Owner)", "owner.john@pawlink.com", "password123", PawTheme.CORAL_LIGHT, PawTheme.CORAL_TEXT, PawTheme.CORAL, PawIcons.paw(13, PawTheme.CORAL_TEXT)));
         demoGroup.add(createDemoPill("Emily (Sitter)", "sitter.emily@pawlink.com", "password123", PawTheme.SUNNY_LIGHT, PawTheme.SUNNY_TEXT, PawTheme.SUNNY, PawIcons.sitter(13, PawTheme.SUNNY_TEXT)));
         demoGroup.add(createDemoPill("Admin", "admin@pawlink.com", "AdminSecurePass2026!", PawTheme.LILAC_LIGHT, PawTheme.LILAC_TEXT, PawTheme.LILAC, PawIcons.shield(13, PawTheme.LILAC_TEXT)));

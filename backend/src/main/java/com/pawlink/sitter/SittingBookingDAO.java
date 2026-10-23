@@ -235,4 +235,12 @@ public class SittingBookingDAO {
         String sql = "UPDATE sitter_bookings SET status = ? WHERE id = ?";
         return jdbcTemplate.update(sql, status, bookingId) > 0;
     }
+
+    /**
+     * Updates booking end_time (e.g. when session is completed early, releasing remaining slot).
+     */
+    public boolean updateEndTime(Long bookingId, LocalDateTime endTime) {
+        String sql = "UPDATE sitter_bookings SET end_time = ? WHERE id = ?";
+        return jdbcTemplate.update(sql, Timestamp.valueOf(endTime), bookingId) > 0;
+    }
 }

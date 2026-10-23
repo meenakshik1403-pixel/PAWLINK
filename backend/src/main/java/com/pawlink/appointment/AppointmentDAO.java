@@ -296,4 +296,15 @@ public class AppointmentDAO {
         final String sql = "UPDATE appointments SET status = ? WHERE id = ?";
         jdbcTemplate.update(sql, newStatus, appointmentId);
     }
+
+    /**
+     * Updates an appointment's end time (e.g. when consultation concludes early).
+     *
+     * @param appointmentId appointment ID
+     * @param endTime       new end time
+     */
+    public void updateEndTime(Long appointmentId, LocalDateTime endTime) {
+        final String sql = "UPDATE appointments SET end_time = ? WHERE id = ?";
+        jdbcTemplate.update(sql, Timestamp.valueOf(endTime), appointmentId);
+    }
 }

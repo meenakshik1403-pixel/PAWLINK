@@ -31,8 +31,8 @@ public class AdminSittersPanel extends BasePanel {
 
     public AdminSittersPanel() {
         super("Pet Sitter Approvals", "Review submitted credentials, ID cards, and qualification proof to approve Pet Sitters.");
-        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
-        setHeaderColor(PawTheme.SUNNY_TEXT);
+        setHeaderIcon(PawIcons.shield(26, PawTheme.MINT));
+        setHeaderColor(PawTheme.MINT_TEXT);
 
         // Setup Sitters Table
         String[] sitterCols = {"User ID", "Sitter Name", "Email Address", "Phone", "Hourly Rate", "Status"};

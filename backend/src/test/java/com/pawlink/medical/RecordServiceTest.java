@@ -51,17 +51,17 @@ public class RecordServiceTest {
         jdbcTemplate.update("DELETE FROM users");
 
         // Seed Vet
-        var vet = UserFactory.createUser("VET", null, "Dr. Sarah Jenkins", "vet.sarah@pawlink.com", "555-0101", "hash", LocalDateTime.now());
+        var vet = UserFactory.createUser("VET", null, "Dr. Sreekumar", "vet.sreekumar@pawlink.com", "555-0101", "hash", LocalDateTime.now());
         userDAO.insert(vet);
         vetId = vet.getUserId();
 
         // Seed Owner
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 
         // Seed Pet
-        var pet = PetFactory.createPet("Dog", "Buddy", LocalDate.of(2021, 5, 10), ownerId);
+        var pet = PetFactory.createPet("Dog", "Bruno", LocalDate.of(2021, 5, 10), ownerId);
         petDAO.insert(pet);
         petId = pet.getPetId();
     }
@@ -79,11 +79,11 @@ public class RecordServiceTest {
 
         assertNotNull(saved.getId());
         assertEquals("Mild allergic dermatitis", saved.getDiagnosis());
-        assertEquals("Dr. Sarah Jenkins", saved.getVetName(), "Vet name must be populated via multi-table JOIN");
+        assertEquals("Dr. Sreekumar", saved.getVetName(), "Vet name must be populated via multi-table JOIN");
 
         List<MedicalRecord> list = medicalRecordDAO.findByPetId(petId);
         assertEquals(1, list.size());
-        assertEquals("Dr. Sarah Jenkins", list.get(0).getVetName());
+        assertEquals("Dr. Sreekumar", list.get(0).getVetName());
     }
 
     @Test

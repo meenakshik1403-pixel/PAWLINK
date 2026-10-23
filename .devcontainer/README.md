@@ -17,7 +17,7 @@ This directory configures a fully isolated, cross-platform development container
 1. **Pre-installed Java 25 (JDK 25 LTS) & Maven:** All Java dependencies are pre-cached in a persistent Docker volume (`pawlink-m2-cache`), enabling fast and offline-capable builds targeting Java 25 LTS.
 2. **Cross-Platform:** Runs identically on **Windows** (Docker Desktop / WSL2), **macOS** (Apple Silicon M1/M2/M3/M4 or Intel), and **Linux**.
 3. **LAN Accessible:** Ports are bound to `0.0.0.0` so other laptops, phones, or tablets on your local network (Wi-Fi/LAN) can access the services using `http://<YOUR-HOST-IP>:<PORT>`.
-4. **Swing GUI in Browser (noVNC):** Run the Java Swing desktop application (`swing-vet`) inside the container and interact with it directly in your web browser at `http://localhost:6080` (password: `pawlink`).
+4. **Swing GUI in Browser (noVNC):** Run the Java Swing desktop application (`swing-client`) inside the container and interact with it directly in your web browser at `http://localhost:6080` (password: `pawlink`).
 5. **Supabase Online CLI:** Pre-installed Supabase CLI for syncing migrations and schema with your shared online Supabase project.
 
 ---

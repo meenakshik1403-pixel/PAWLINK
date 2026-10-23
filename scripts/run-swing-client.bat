@@ -18,9 +18,9 @@ if exist "%JAVA_HOME%\bin\javaw.exe" (
     set "JAVAW_BIN=javaw"
 )
 
-if not exist "swing-vet\target\swing-vet-1.0.0.jar" (
-    echo Packaging swing-vet client...
-    call mvn package -pl swing-vet -DskipTests
+if not exist "swing-client\target\swing-client-1.0.0.jar" (
+    echo Packaging swing-client...
+    call mvn package -pl swing-client -DskipTests
 )
 
-start "" "%JAVAW_BIN%" -jar "swing-vet\target\swing-vet-1.0.0.jar"
+start "" "%JAVAW_BIN%" -jar "swing-client\target\swing-client-1.0.0.jar"

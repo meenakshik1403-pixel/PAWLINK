@@ -43,8 +43,8 @@ class SittingBookingServiceTest {
         startTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
         endTime = LocalDateTime.now().plusDays(1).withHour(14).withMinute(0);
 
-        verifiedSitter = new Sitter(10L, "Emily Watson", "emily@pawlink.com", "555-0101", BigDecimal.valueOf(25.00), true);
-        unverifiedSitter = new Sitter(20L, "David Clark", "david@pawlink.com", "555-0102", BigDecimal.valueOf(20.00), false);
+        verifiedSitter = new Sitter(10L, "Emily Johnson", "emily@pawlink.com", "555-0101", BigDecimal.valueOf(25.00), true);
+        unverifiedSitter = new Sitter(20L, "Pramod S P", "david@pawlink.com", "555-0102", BigDecimal.valueOf(20.00), false);
     }
 
     @Test
@@ -110,12 +110,12 @@ class SittingBookingServiceTest {
         when(sittingBookingDAO.findById(100L)).thenReturn(Optional.of(mockBooking));
         when(sittingBookingDAO.insertCheckin(any(CheckIn.class))).thenReturn(1L);
 
-        CheckIn checkIn = sittingBookingService.addCheckin(100L, "Gave Buddy lunch and walked 20 mins.");
+        CheckIn checkIn = sittingBookingService.addCheckin(100L, "Gave Bruno lunch and walked 20 mins.");
 
         assertNotNull(checkIn);
         assertEquals(1L, checkIn.getId());
         assertEquals(100L, checkIn.getBookingId());
-        assertEquals("Gave Buddy lunch and walked 20 mins.", checkIn.getNote());
+        assertEquals("Gave Bruno lunch and walked 20 mins.", checkIn.getNote());
         verify(sittingBookingDAO).insertCheckin(any(CheckIn.class));
     }
 
@@ -125,6 +125,48 @@ class SittingBookingServiceTest {
         assertThrows(IllegalArgumentException.class, () ->
                 sittingBookingService.addCheckin(100L, "   "));
         verify(sittingBookingDAO, never()).insertCheckin(any());
+    }
+
+    @Test
+    @DisplayName("Completing session early updates endTime to release remaining slot and releases escrow")
+    void updateBookingStatus_whenCompletedEarly_shouldUpdateEndTimeAndReleasePayment() {
+        LocalDateTime sessionStart = LocalDateTime.now().minusHours(1);
+        LocalDateTime sessionEnd = LocalDateTime.now().plusHours(3);
+        SittingBooking booking = new SittingBooking(101L, 1L, 10L, 5L, sessionStart, sessionEnd, "CONFIRMED");
+        booking.setPaymentStatus("HELD");
+
+        when(sittingBookingDAO.findById(101L)).thenReturn(Optional.of(booking));
+        when(sittingBookingDAO.updateStatus(eq(101L), eq("COMPLETED"))).thenReturn(true);
+        when(sittingBookingDAO.updateEndTime(eq(101L), any(LocalDateTime.class))).thenReturn(true);
+        when(paymentDAO.updateStatusByBookingId(eq(101L), eq("RELEASED"))).thenReturn(true);
+
+        SittingBooking result = sittingBookingService.updateBookingStatus(101L, "COMPLETED");
+
+        assertNotNull(result);
+        assertEquals("COMPLETED", result.getStatus());
+        assertEquals("RELEASED", result.getPaymentStatus());
+        assertTrue(result.getEndTime().isBefore(sessionEnd), "End time should be truncated to release remaining slot");
+        verify(sittingBookingDAO).updateEndTime(eq(101L), any(LocalDateTime.class));
+        verify(paymentDAO).updateStatusByBookingId(eq(101L), eq("RELEASED"));
+    }
+
+    @Test
+    @DisplayName("Cancelling booking refunds escrow payment")
+    void updateBookingStatus_whenCancelled_shouldRefundEscrow() {
+        SittingBooking booking = new SittingBooking(102L, 1L, 10L, 5L, startTime, endTime, "CONFIRMED");
+        booking.setPaymentStatus("HELD");
+
+        when(sittingBookingDAO.findById(102L)).thenReturn(Optional.of(booking));
+        when(sittingBookingDAO.updateStatus(eq(102L), eq("CANCELLED"))).thenReturn(true);
+        when(paymentDAO.updateStatusByBookingId(eq(102L), eq("REFUNDED"))).thenReturn(true);
+
+        SittingBooking result = sittingBookingService.updateBookingStatus(102L, "CANCELLED");
+
+        assertNotNull(result);
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals("REFUNDED", result.getPaymentStatus());
+        verify(sittingBookingDAO, never()).updateEndTime(anyLong(), any());
+        verify(paymentDAO).updateStatusByBookingId(eq(102L), eq("REFUNDED"));
     }
 }
 

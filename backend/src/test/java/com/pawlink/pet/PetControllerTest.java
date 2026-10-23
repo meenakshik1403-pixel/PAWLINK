@@ -46,7 +46,7 @@ public class PetControllerTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@test.com", "123456", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@test.com", "123456", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
     }
@@ -54,7 +54,7 @@ public class PetControllerTest {
     @Test
     @DisplayName("POST /api/pets returns 201 Created with care guidelines")
     void testCreatePetEndpoint() throws Exception {
-        PetRequest req = new PetRequest("Buddy", "Dog", LocalDate.of(2021, 6, 15), ownerId);
+        PetRequest req = new PetRequest("Bruno", "Dog", LocalDate.of(2021, 6, 15), ownerId);
 
         mockMvc.perform(post("/api/pets")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,7 +62,7 @@ public class PetControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.name", is("Buddy")))
+                .andExpect(jsonPath("$.name", is("Bruno")))
                 .andExpect(jsonPath("$.species", is("Dog")))
                 .andExpect(jsonPath("$.careGuidelines", containsString("Daily exercise")));
     }

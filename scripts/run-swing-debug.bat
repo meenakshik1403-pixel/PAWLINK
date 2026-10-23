@@ -18,14 +18,14 @@ if exist "%JAVA_HOME%\bin\java.exe" (
     set "JAVA_BIN=java"
 )
 
-if not exist "swing-vet\target\swing-vet-1.0.0.jar" (
-    echo Packaging swing-vet client...
-    call mvn package -pl swing-vet -DskipTests
+if not exist "swing-client\target\swing-client-1.0.0.jar" (
+    echo Packaging swing-client...
+    call mvn package -pl swing-client -DskipTests
 )
 
 echo ========================================================
 echo Starting PawLink Swing Desktop Client (JDK 25 LTS)...
 echo Connecting to Backend at: http://localhost:8080
 echo ========================================================
-"%JAVA_BIN%" -jar "swing-vet\target\swing-vet-1.0.0.jar"
+"%JAVA_BIN%" -jar "swing-client\target\swing-client-1.0.0.jar"
 pause

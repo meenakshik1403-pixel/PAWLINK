@@ -39,7 +39,7 @@ echo "📦 Pre-caching and compiling all Java Maven dependencies..."
 mvn -B clean compile -DskipTests
 
 echo "🔨 Building Swing desktop client JAR..."
-mvn -B package -pl swing-vet -DskipTests
+mvn -B package -pl swing-client -DskipTests
 
 echo "🔍 Verifying Supabase CLI installation..."
 if command -v supabase > /dev/null 2>&1; then

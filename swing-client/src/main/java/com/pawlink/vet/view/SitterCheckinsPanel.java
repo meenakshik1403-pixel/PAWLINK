@@ -40,8 +40,8 @@ public class SitterCheckinsPanel extends BasePanel {
     public SitterCheckinsPanel() {
         super("Pet Care Check-Ins", "Log feeding, walking, and wellness updates in real-time for pet parents.");
 
-        setHeaderIcon(PawIcons.sitter(22, PawTheme.PRIMARY));
-        setHeaderColor(PawTheme.PRIMARY);
+        setHeaderIcon(PawIcons.clock(24, PawTheme.CORAL));
+        setHeaderColor(PawTheme.CORAL_TEXT);
 
         String[] cols = {"ID", "Pet", "Owner", "Start Time", "Status"};
         this.bookingTableModel = new BaseTableModel<>(cols) {

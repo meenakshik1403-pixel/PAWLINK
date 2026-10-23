@@ -53,19 +53,19 @@ public class DatabaseSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         // Seed standard demo users (Vets, Sitters, Owners) with +91 10-digit phones
-        seedUserIfNotExists("Dr. Sarah Jenkins", "vet.sarah@pawlink.com", "+919876543101", "VET");
-        seedUserIfNotExists("Dr. Michael Brown", "vet.michael@pawlink.com", "+919876543102", "VET");
-        seedUserIfNotExists("Emily Watson", "sitter.emily@pawlink.com", "+919876543201", "SITTER");
-        seedUserIfNotExists("David Clark", "sitter.david@pawlink.com", "+919876543202", "SITTER");
-        seedUserIfNotExists("John Doe", "owner.john@pawlink.com", "+919876543301", "OWNER");
-        seedUserIfNotExists("Jane Smith", "owner.jane@pawlink.com", "+919876543302", "OWNER");
+        seedUserIfNotExists("Dr. Sreekumar", "vet.sreekumar@pawlink.com", "+919876543101", "VET");
+        seedUserIfNotExists("Dr. Michael Phillip", "vet.michael@pawlink.com", "+919876543102", "VET");
+        seedUserIfNotExists("Emily Johnson", "sitter.emily@pawlink.com", "+919876543201", "SITTER");
+        seedUserIfNotExists("Pramod S P", "sitter.pramod@pawlink.com", "+919876543202", "SITTER");
+        seedUserIfNotExists("John Vargese", "owner.john@pawlink.com", "+919876543301", "OWNER");
+        seedUserIfNotExists("Janaki Nair", "owner.janaki@pawlink.com", "+919876543302", "OWNER");
 
-        // Ensure demo sitters have profiles (Emily verified, David unverified)
+        // Ensure demo sitters have profiles (Emily verified, Pramod unverified)
         ensureSitterProfile("sitter.emily@pawlink.com", 250.0, true);
-        ensureSitterProfile("sitter.david@pawlink.com", 200.0, false);
+        ensureSitterProfile("sitter.pramod@pawlink.com", 200.0, false);
 
-        // Ensure demo vets have profiles (Sarah and Michael verified)
-        ensureVetProfile("vet.sarah@pawlink.com", true);
+        // Ensure demo vets have profiles (Sreekumar and Michael verified)
+        ensureVetProfile("vet.sreekumar@pawlink.com", true);
         ensureVetProfile("vet.michael@pawlink.com", true);
 
         // Seed or synchronize Administrator from .env configuration

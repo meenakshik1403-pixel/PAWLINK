@@ -44,15 +44,15 @@ public class AppointmentServiceTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var vet = UserFactory.createUser("VET", null, "Dr. Sarah Jenkins", "vet.sarah@pawlink.com", "555-0101", "hash", LocalDateTime.now());
+        var vet = UserFactory.createUser("VET", null, "Dr. Sreekumar", "vet.sreekumar@pawlink.com", "555-0101", "hash", LocalDateTime.now());
         userDAO.insert(vet);
         vetId = vet.getUserId();
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 
-        var pet = PetFactory.createPet("Dog", "Buddy", LocalDate.of(2021, 5, 10), ownerId);
+        var pet = PetFactory.createPet("Dog", "Bruno", LocalDate.of(2021, 5, 10), ownerId);
         petDAO.insert(pet);
         petId = pet.getPetId();
     }
@@ -94,9 +94,9 @@ public class AppointmentServiceTest {
 
         assertNotNull(booked.getId());
         assertEquals("PENDING", booked.getStatus());
-        assertEquals("Dr. Sarah Jenkins", booked.getVetName());
-        assertEquals("Buddy", booked.getPetName());
-        assertEquals("John Doe", booked.getOwnerName());
+        assertEquals("Dr. Sreekumar", booked.getVetName());
+        assertEquals("Bruno", booked.getPetName());
+        assertEquals("John Vargese", booked.getOwnerName());
     }
 
     @Test

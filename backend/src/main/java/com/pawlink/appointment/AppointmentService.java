@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -103,6 +104,18 @@ public class AppointmentService {
 
         appointmentDAO.updateStatus(id, normalized);
         existing.setStatus(normalized);
+
+        if ("COMPLETED".equalsIgnoreCase(normalized)) {
+            LocalDateTime now = LocalDateTime.now();
+            if (existing.getEndTime() != null && now.isBefore(existing.getEndTime())) {
+                LocalDateTime newEndTime = (existing.getStartTime() != null && now.isBefore(existing.getStartTime()))
+                        ? existing.getStartTime()
+                        : now;
+                appointmentDAO.updateEndTime(id, newEndTime);
+                existing.setEndTime(newEndTime);
+            }
+        }
+
         return existing;
     }
 

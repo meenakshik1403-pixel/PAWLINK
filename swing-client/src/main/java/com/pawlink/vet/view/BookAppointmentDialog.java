@@ -233,9 +233,9 @@ public class BookAppointmentDialog extends JDialog {
                         vetIndexToId.put(i++, vet.getId());
                     }
                 } else {
-                    vetComboBox.addItem("Dr. Sarah Jenkins");
+                    vetComboBox.addItem("Dr. Sreekumar");
                     vetIndexToId.put(0, 1L);
-                    vetComboBox.addItem("Dr. Michael Brown");
+                    vetComboBox.addItem("Dr. Michael Phillip");
                     vetIndexToId.put(1, 2L);
                 }
 

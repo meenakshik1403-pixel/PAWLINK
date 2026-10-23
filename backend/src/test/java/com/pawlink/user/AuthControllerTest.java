@@ -45,7 +45,7 @@ public class AuthControllerTest {
     @DisplayName("POST /api/auth/register creates user and returns 201 Created")
     void testRegisterEndpoint() throws Exception {
         RegisterRequest req = new RegisterRequest(
-                "Dr. Michael Brown",
+                "Dr. Michael Phillip",
                 "vet.michael@pawlink.com",
                 "password123",
                 "+919876543102",
@@ -57,7 +57,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.name", is("Dr. Michael Brown")))
+                .andExpect(jsonPath("$.name", is("Dr. Michael Phillip")))
                 .andExpect(jsonPath("$.email", is("vet.michael@pawlink.com")))
                 .andExpect(jsonPath("$.role", is("VET")));
     }
@@ -67,7 +67,7 @@ public class AuthControllerTest {
     void testLoginEndpoint() throws Exception {
         // First register an Owner
         RegisterRequest regReq = new RegisterRequest(
-                "John Doe",
+                "John Vargese",
                 "owner.john@pawlink.com",
                 "password123",
                 "+919876543401",
@@ -85,7 +85,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(loginReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.name", is("John Doe")))
+                .andExpect(jsonPath("$.name", is("John Vargese")))
                 .andExpect(jsonPath("$.email", is("owner.john@pawlink.com")))
                 .andExpect(jsonPath("$.role", is("OWNER")));
     }

@@ -39,11 +39,11 @@ public class PetServiceTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var owner1 = UserFactory.createUser("OWNER", null, "John Doe", "john@example.com", "1234567890", "hash1", LocalDateTime.now());
+        var owner1 = UserFactory.createUser("OWNER", null, "John Vargese", "john@example.com", "1234567890", "hash1", LocalDateTime.now());
         userDAO.insert(owner1);
         ownerId1 = owner1.getUserId();
 
-        var owner2 = UserFactory.createUser("OWNER", null, "Jane Smith", "jane@example.com", "0987654321", "hash2", LocalDateTime.now());
+        var owner2 = UserFactory.createUser("OWNER", null, "Janaki Nair", "jane@example.com", "0987654321", "hash2", LocalDateTime.now());
         userDAO.insert(owner2);
         ownerId2 = owner2.getUserId();
     }
@@ -53,8 +53,8 @@ public class PetServiceTest {
     void testPolymorphicCareGuidelines() {
         LocalDate dob = LocalDate.of(2022, 1, 1);
         Pet dog = PetFactory.createPet("Dog", "Rover", dob, ownerId1);
-        Pet cat = PetFactory.createPet("Cat", "Whiskers", dob, ownerId1);
-        Pet bird = PetFactory.createPet("Bird", "Tweety", dob, ownerId1);
+        Pet cat = PetFactory.createPet("Cat", "Jimmy", dob, ownerId1);
+        Pet bird = PetFactory.createPet("Bird", "Scooby", dob, ownerId1);
         Pet reptile = PetFactory.createPet("Reptile", "Draco", dob, ownerId1);
 
         assertTrue(dog instanceof Dog);
@@ -117,7 +117,7 @@ public class PetServiceTest {
     @Test
     @DisplayName("Ownership Validation: getPets(ownerId) returns only pets belonging to that owner")
     void testOwnershipValidation() {
-        PetRequest p1 = new PetRequest("Buddy", "Dog", LocalDate.of(2020, 1, 1), null);
+        PetRequest p1 = new PetRequest("Bruno", "Dog", LocalDate.of(2020, 1, 1), null);
         PetRequest p2 = new PetRequest("Luna", "Cat", LocalDate.of(2021, 2, 2), null);
         PetRequest p3 = new PetRequest("Polly", "Bird", LocalDate.of(2022, 3, 3), null);
 

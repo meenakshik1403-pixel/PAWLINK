@@ -54,14 +54,14 @@ public class MedicalControllerTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var vet = UserFactory.createUser("VET", null, "Dr. Sarah Jenkins", "vet.sarah@pawlink.com", "555-0101", "hash", LocalDateTime.now());
+        var vet = UserFactory.createUser("VET", null, "Dr. Sreekumar", "vet.sreekumar@pawlink.com", "555-0101", "hash", LocalDateTime.now());
         userDAO.insert(vet);
         vetId = vet.getUserId();
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
         userDAO.insert(owner);
 
-        var pet = PetFactory.createPet("Cat", "Whiskers", LocalDate.of(2022, 1, 1), owner.getUserId());
+        var pet = PetFactory.createPet("Cat", "Jimmy", LocalDate.of(2022, 1, 1), owner.getUserId());
         petDAO.insert(pet);
         petId = pet.getPetId();
     }
@@ -79,7 +79,7 @@ public class MedicalControllerTest {
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.diagnosis", is("Annual checkup")))
                 .andExpect(jsonPath("$.prescription", is("Flea prevention")))
-                .andExpect(jsonPath("$.vetName", is("Dr. Sarah Jenkins")));
+                .andExpect(jsonPath("$.vetName", is("Dr. Sreekumar")));
     }
 
     @Test
@@ -122,6 +122,6 @@ public class MedicalControllerTest {
                 .andExpect(jsonPath("$[0].title", is("Rabies")))
                 .andExpect(jsonPath("$[1].type", is("MEDICAL")))
                 .andExpect(jsonPath("$[1].title", is("Gastroenteritis")))
-                .andExpect(jsonPath("$[1].vetName", is("Dr. Sarah Jenkins")));
+                .andExpect(jsonPath("$[1].vetName", is("Dr. Sreekumar")));
     }
 }

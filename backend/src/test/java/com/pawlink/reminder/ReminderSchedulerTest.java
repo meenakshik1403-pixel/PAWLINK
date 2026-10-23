@@ -50,7 +50,7 @@ public class ReminderSchedulerTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@pawlink.com", "+1-555-0202", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@pawlink.com", "+1-555-0202", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 
@@ -72,7 +72,7 @@ public class ReminderSchedulerTest {
         // Notify
         Reminder r = new Reminder(petId, "VACCINATION", LocalDate.now());
         r.setPetName("Max");
-        r.setOwnerName("John Doe");
+        r.setOwnerName("John Vargese");
         reminderScheduler.notifyObservers(r);
 
         assertEquals(1, received.size());
@@ -135,7 +135,7 @@ public class ReminderSchedulerTest {
         List<Reminder> ownerReminders = reminderDAO.findByOwnerId(ownerId);
         assertEquals(2, ownerReminders.size());
         assertEquals("Max", ownerReminders.get(0).getPetName());
-        assertEquals("John Doe", ownerReminders.get(0).getOwnerName());
+        assertEquals("John Vargese", ownerReminders.get(0).getOwnerName());
     }
 }
 

@@ -38,8 +38,11 @@ public class SitterBookingsPanel extends BasePanel {
 
     public SitterBookingsPanel() {
         super(getAdaptiveTitle(), getAdaptiveSubtitle());
-        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
-        setHeaderColor(PawTheme.SUNNY_TEXT);
+        boolean isOwner = Session.getInstance().isOwner();
+        Color accent = isOwner ? PawTheme.PEACH : PawTheme.SUNNY;
+        Color textCol = isOwner ? PawTheme.PEACH_TEXT : PawTheme.SUNNY_TEXT;
+        setHeaderIcon(PawIcons.sitter(26, accent));
+        setHeaderColor(textCol);
 
         String[] columns = {"Booking #", "Pet Name", "Owner", "Sitter", "Start Time", "End Time", "Status", "Total Fee", "Escrow Status"};
         this.tableModel = new BaseTableModel<>(columns) {
@@ -81,6 +84,14 @@ public class SitterBookingsPanel extends BasePanel {
             return "Track sitting sessions, inspect real-time care updates, and release escrow payment.";
         }
         return "View scheduled sitting appointments, monitor escrow status, and log pet care updates.";
+    }
+
+    @Override
+    public void setHeaderColor(Color color) {
+        super.setHeaderColor(color);
+        if (color != null) {
+            setHeaderIcon(PawIcons.sitter(26, color));
+        }
     }
 
     private void setupUI() {

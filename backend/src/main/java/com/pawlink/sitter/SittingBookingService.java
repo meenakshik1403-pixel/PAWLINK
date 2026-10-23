@@ -210,6 +210,14 @@ public class SittingBookingService {
         booking.setStatus(normalizedStatus);
 
         if ("COMPLETED".equalsIgnoreCase(normalizedStatus)) {
+            LocalDateTime now = LocalDateTime.now();
+            if (booking.getEndTime() != null && now.isBefore(booking.getEndTime())) {
+                LocalDateTime newEndTime = (booking.getStartTime() != null && now.isBefore(booking.getStartTime()))
+                        ? booking.getStartTime()
+                        : now;
+                sittingBookingDAO.updateEndTime(bookingId, newEndTime);
+                booking.setEndTime(newEndTime);
+            }
             paymentDAO.updateStatusByBookingId(bookingId, "RELEASED");
             booking.setPaymentStatus("RELEASED");
         } else if ("CANCELLED".equalsIgnoreCase(normalizedStatus)) {

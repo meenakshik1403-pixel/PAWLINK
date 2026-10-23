@@ -2,7 +2,7 @@
 
 PawLink is a comprehensive, enterprise-grade Pet Care Management Platform designed to streamline interactions between **Pet Owners**, **Veterinarians**, **Pet Sitters**, and **Platform Administrators**.
 
-Built using **Java 25 (JDK 25 LTS)**, **Spring Boot 3**, and a modern **Java Swing Desktop Client (FlatLaf)**, PawLink features pure SQL database interactions via **Spring `JdbcTemplate`** (**strictly zero JPA / Hibernate**), role-based workflows, secure credential verification, and complete financial transactions in Indian Rupees (`₹` INR).
+Built using **Java 25 (JDK 25 LTS)**, **Spring Boot 3**, and a modern **Java Swing Desktop Client (FlatLaf)**, PawLink features pure SQL database interactions via **Spring `JdbcTemplate`**, role-based workflows and secure credential verification.
 
 ---
 
@@ -49,19 +49,30 @@ PAWLINK/
 │       ├── reminder/                         # Preventive health reminders & scheduler
 │       ├── sitter/                           # Pet sitter directory, bookings & live check-ins
 │       └── user/                             # Authentication, role models, document uploads
-└── swing-vet/                                # Unified Java Swing Desktop Application
+└── swing-client/                             # Unified Java Swing Desktop Application (All 4 Roles)
     ├── pom.xml
     └── src/main/java/com/pawlink/vet/
-        ├── VetApp.java                       # Swing client entrypoint
-        ├── api/                              # HTTP client, session state & role headers
+        ├── VetApp.java                       # Main desktop application entrypoint
+        ├── api/                              # ApiClient, Session management & role-based HTTP headers
         ├── base/                             # PawDateTimePicker, PawDatePicker, PawComponents, PawIcons, PawTheme
-        ├── model/                            # Data Transfer Objects (DTOs)
-        └── view/                             # Role-based panels, dialogs & navigation shell
+        ├── model/                            # Data Transfer Objects (DTOs) for GUI binding
+        └── view/                             # Role-based panels, dialogs & navigation shell (Owner, Sitter, Vet, Admin)
 ```
+
+> **Note on the `swing-client` module**: `swing-client` is the **core, unified desktop application module** for the entire project. It houses the complete desktop user interface for all four platform roles (**Pet Owners**, **Pet Sitters**, **Veterinarians**, and **Administrators**), as well as all shared UI widgets, Java2D vector icons, and custom components.
 
 ---
 
-## 2. Core Verticals & Role Capabilities
+## 2. Academic & Presentation Resources
+
+* **Viva & Presentation Handbook:** [`docs/VIVA_PRESENTATION_GUIDE.md`](docs/VIVA_PRESENTATION_GUIDE.md)
+* **Designed Presentation PDF (12 Pages):** [`docs/PawLink_Viva_Presentation_Handbook.pdf`](docs/PawLink_Viva_Presentation_Handbook.pdf)
+* **Comprehensive Project Work Report:** [`docs/WORK_DONE_REPORT.md`](docs/WORK_DONE_REPORT.md)
+* **QA & Test Matrix (17 Cases):** [`docs/test-cases.md`](docs/test-cases.md)
+
+---
+
+## 3. Core Verticals & Role Capabilities
 
 PawLink delivers a cohesive experience tailored to each participant:
 
@@ -69,11 +80,11 @@ PawLink delivers a cohesive experience tailored to each participant:
 * **Pet Registry & Profiles:** Register and manage multiple pets (dogs, cats, birds, etc.) with age, breed, gender, and weight metrics. Guaranteed duplicate-free list views.
 * **Breed-Specific Care:** Instant breed care recommendations and preventive guidelines.
 * **Veterinary Appointments:** Browse available licensed veterinarians, schedule clinic consultations with dynamic slot filtering (automatically omitting passed time slots for today), and review upcoming/past appointments.
-* **Verified Pet Sitter Directory:** Discover vetted sitters filtered strictly by verified status and view approved hourly rates in `₹/hr`.
+* **Verified Pet Sitter Directory:** Discover vetted sitters filtered strictly by verified status and view approved hourly rates.
 * **Tactile Date & Time Selector (`PawDateTimePicker`):** Modern compound date/time picker combining an Android Material calendar modal with 30-minute time intervals, past-time prevention, and one-click duration shortcuts (`+1h`, `+2h`, `+3h`, `+4h`, `+8h`, `Overnight`).
 * **Booking & Session Tracking:** Book sitter sessions with automatic escrow rate estimation, inspect live check-in updates and notes from sitters, cancel pending requests, or end active sessions.
 * **Automated Payment Settlement:** Ending a sitting session automatically releases payment from the owner's balance to the sitter's wallet with escrow protection.
-* **Transaction History:** Real-time billing audit log showing payment methods (Wallet, UPI, Card), reference IDs, and amounts in `₹` INR.
+* **Transaction History:** Real-time billing audit log showing payment methods (Wallet, UPI, Card), reference IDs, and amounts.
 
 ### 🩺 Veterinarians
 * **Clinic Appointments:** View upcoming consultations, accept/manage patient visits, and review owner contact details.
@@ -83,7 +94,7 @@ PawLink delivers a cohesive experience tailored to each participant:
 ### 🐾 Pet Sitters
 * **Job Dashboard:** View assigned sitting bookings across all lifecycle states (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`).
 * **Live Check-In Feed:** Submit live timestamped check-in notes and activity updates for owners to review in real time. Actions are dynamically disabled and finalized once booking is marked `COMPLETED`.
-* **Profile & Earnings:** Manage profile details and track earned income through approved hourly rates (`₹/hr`).
+* **Profile & Earnings:** Manage profile details and track earned income through approved hourly rates.
 
 ### 🛡️ Platform Administrators
 * **Sitter Approval Workflow:** Dedicated tab to review pending sitter registrations, inspect uploaded government ID proofs and qualification certificates (PDF), and confirm or adjust their approved hourly rate (`₹/hr`) prior to activation.
@@ -96,7 +107,7 @@ PawLink delivers a cohesive experience tailored to each participant:
 
 ---
 
-## 3. Security, Compliance & Data Policies
+## 4. Security, Compliance & Data Policies
 
 1. **Role Registration Controls:**
    * Public registration allows only `Pet Owner`, `Pet Sitter`, and `Veterinarian` roles.
@@ -120,7 +131,7 @@ PawLink delivers a cohesive experience tailored to each participant:
 
 ---
 
-## 4. REST API Overview
+## 5. REST API Overview
 
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
@@ -154,7 +165,7 @@ PawLink delivers a cohesive experience tailored to each participant:
 
 ---
 
-## 5. Getting Started
+## 6. Getting Started
 
 ### Prerequisites
 * **Java Development Kit:** JDK 25 LTS (tested with build 25.0.5+9-LTS; bytecode compiler targets `--release 21` for maximum framework stability)
@@ -210,8 +221,8 @@ mvn clean test
   ```
 * **Terminal 2 — Swing Desktop Application:**
   ```bash
-  mvn package -pl swing-vet -DskipTests
-  java -jar swing-vet/target/swing-vet-1.0.0.jar
+  mvn package -pl swing-client -DskipTests
+  java -jar swing-client/target/swing-client-1.0.0.jar
   ```
 
 #### Option C: DevContainer (Isolated Docker Sandbox)
@@ -226,25 +237,44 @@ mvn clean test
 
 ---
 
-## 6. Pre-Seeded Demo Accounts
+## 7. Pre-Seeded Demo Accounts
 
 The application login window provides quick credentials for testing all 4 roles:
 
 | Role | Email | Password | Pre-Configured State |
 |---|---|---|---|
 | **Admin** | `admin@pawlink.com` | `AdminSecurePass2026!` | Full platform administration, sitter/vet approval tabs & stats |
-| **Owner** | `owner.priya@pawlink.com` | `OwnerPass123!` | Registered pets, appointments, wallet balance, sitter bookings |
-| **Vet** | `vet.sarah@pawlink.com` | `VetPass123!` | Approved status, clinic consultations, medical & vaccine timeline |
-| **Sitter** | `sitter.rahul@pawlink.com` | `SitterPass123!` | Approved status, assigned bookings, live check-ins feed |
+| **Owner** | `owner.john@pawlink.com` | `password123` | John Vargese, registered pets (Bruno, Jimmy), appointments, wallet balance, sitter bookings |
+| **Vet** | `vet.sreekumar@pawlink.com` | `password123` | Dr. Sreekumar, approved status, clinic consultations, medical & vaccine timeline |
+| **Sitter** | `sitter.emily@pawlink.com` | `password123` | Emily Johnson, approved status, assigned bookings, live check-ins feed |
 
 ---
 
-## 7. Testing & Quality Assurance
+## 8. Testing & Quality Assurance
 
 PawLink contains comprehensive automated unit and integration tests covering business logic, data access, role restrictions, and REST controller endpoints:
 
 ```powershell
-mvn test
+# Run full backend automated test suite (73 tests)
+mvn test -f backend/pom.xml
+
+# Compile and package entire multi-module reactor
+mvn clean package -DskipTests
 ```
 * **Backend:** 73 passing tests covering `AdminController`, `AdminService`, `AuthController`, `UserService`, `AppointmentService`, `SittingBookingService`, `ReminderScheduler`, and `PaymentDAO`.
 * **Swing Client:** Shaded standalone distribution verified on JDK 25 LTS.
+
+---
+
+## 9. 8-Person Engineering Team & Contributions
+
+| Member Code | Name | Role / Vertical | Technical Responsibilities |
+|---|---|---|---|
+| **P1** | **Devanarayanan** | Lead Architect & Core Systems | Multi-module reactor, Auth, Security, Seeder, DevContainer, FlatLaf UI modernization, `PawDateTimePicker`, JDK 25 migration |
+| **P2** | **Abhirami Lakshmanan** | Pet Domain & Guidelines | Polymorphic pet model (`Dog`, `Cat`, `Bird`, `Reptile`), `PetFactory`, species care guidelines, `PetDAO`, pet Swing panels |
+| **P3** | **Archana Mohan** | Medical & Vaccinations | `MedicalRecordDAO`, `VaccinationDAO`, Unified Medical Timeline DTO, automatic vaccination reminder scheduling, `RecordsPanel` |
+| **P4** | **Hayah Mehak** | Clinical Appointments | `Schedulable` contract interface, interval collision detection ($S_1 < E_2 \land E_1 > S_2$), `SlotUnavailableException`, appointment booking UI |
+| **P5** | **Meenakshi K** | Automated Reminders | `ReminderScheduler` (Subject), `OwnerReminderObserver` & `SitterReminderObserver` (Observers), `EmailAdapter` & `SmsAdapter`, sweep queries |
+| **P6** | **Parvathi Menon T** | Pet Sitters & Check-Ins | Verified sitter directory, booking lifecycle state machine (`PENDING` $\rightarrow$ `CONFIRMED` $\rightarrow$ `COMPLETED`), live check-in timeline feed |
+| **P7** | **Pranathi Nagesh** | Payments & Escrow | Two-phase escrow hold & settlement (`HELD` $\rightarrow$ `RELEASED` / `REFUNDED`), `PaymentFactory`, ceiling-based hourly calculation, Indian Rupee (`₹`) ledger |
+| **P8** | **Sivanee C Prem** | Admin Approvals & QA | Administrative verification gate for sitters & vets, PDF credential review, SQL `GROUP BY` analytics, 17-point QA matrix & 73 automated tests |

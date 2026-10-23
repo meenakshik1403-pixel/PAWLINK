@@ -55,15 +55,15 @@ public class AppointmentControllerTest {
         jdbcTemplate.update("DELETE FROM pets");
         jdbcTemplate.update("DELETE FROM users");
 
-        var vet = UserFactory.createUser("VET", null, "Dr. Sarah Jenkins", "vet.sarah@pawlink.com", "555-0101", "hash", LocalDateTime.now());
+        var vet = UserFactory.createUser("VET", null, "Dr. Sreekumar", "vet.sreekumar@pawlink.com", "555-0101", "hash", LocalDateTime.now());
         userDAO.insert(vet);
         vetId = vet.getUserId();
 
-        var owner = UserFactory.createUser("OWNER", null, "John Doe", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
+        var owner = UserFactory.createUser("OWNER", null, "John Vargese", "john@pawlink.com", "555-0202", "hash", LocalDateTime.now());
         userDAO.insert(owner);
         ownerId = owner.getUserId();
 
-        var pet = PetFactory.createPet("Dog", "Buddy", LocalDate.of(2021, 5, 10), ownerId);
+        var pet = PetFactory.createPet("Dog", "Bruno", LocalDate.of(2021, 5, 10), ownerId);
         petDAO.insert(pet);
         petId = pet.getPetId();
     }
@@ -86,9 +86,9 @@ public class AppointmentControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.status", is("PENDING")))
-                .andExpect(jsonPath("$.vetName", is("Dr. Sarah Jenkins")))
-                .andExpect(jsonPath("$.petName", is("Buddy")))
-                .andExpect(jsonPath("$.ownerName", is("John Doe")));
+                .andExpect(jsonPath("$.vetName", is("Dr. Sreekumar")))
+                .andExpect(jsonPath("$.petName", is("Bruno")))
+                .andExpect(jsonPath("$.ownerName", is("John Vargese")));
     }
 
     @Test
@@ -147,14 +147,14 @@ public class AppointmentControllerTest {
                         .header("X-User-Id", vetId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].petName", is("Buddy")));
+                .andExpect(jsonPath("$[0].petName", is("Bruno")));
 
         // Query by ownerId
         mockMvc.perform(get("/api/appointments?ownerId=" + ownerId)
                         .header("X-User-Id", ownerId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].ownerName", is("John Doe")));
+                .andExpect(jsonPath("$[0].ownerName", is("John Vargese")));
     }
 
     @Test

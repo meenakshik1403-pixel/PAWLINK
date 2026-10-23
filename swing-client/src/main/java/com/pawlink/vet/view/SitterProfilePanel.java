@@ -29,8 +29,8 @@ public class SitterProfilePanel extends BasePanel {
     public SitterProfilePanel() {
         super("Sitter Profile & Credentials", "Verify your credentials, review your published rate, and track platform jobs.");
 
-        setHeaderIcon(PawIcons.sitter(26, PawTheme.SUNNY));
-        setHeaderColor(PawTheme.SUNNY_TEXT);
+        setHeaderIcon(PawIcons.user(26, PawTheme.LILAC));
+        setHeaderColor(PawTheme.LILAC_TEXT);
 
         setupUI();
         loadProfile();

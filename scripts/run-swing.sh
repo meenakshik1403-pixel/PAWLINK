@@ -14,9 +14,9 @@ echo "🌐 View & interact with the GUI in your browser at:"
 echo "   http://localhost:6080 (or http://<LAN_IP>:6080)"
 echo "   (noVNC default password: pawlink)"
 
-if [ ! -f "swing-vet/target/swing-vet-1.0.0.jar" ]; then
-    echo "📦 Building swing-vet executable jar..."
-    mvn -B package -pl swing-vet -DskipTests
+if [ ! -f "swing-client/target/swing-client-1.0.0.jar" ]; then
+    echo "📦 Building swing-client executable jar..."
+    mvn -B package -pl swing-client -DskipTests
 fi
 
-java -jar swing-vet/target/swing-vet-1.0.0.jar
+java -jar swing-client/target/swing-client-1.0.0.jar
