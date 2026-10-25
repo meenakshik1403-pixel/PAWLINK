@@ -63,12 +63,16 @@ PAWLINK/
 
 ---
 
-## 2. Academic & Presentation Resources
+## 2. Academic Deliverables & Faculty Evaluation Package
 
-* **Viva & Presentation Handbook:** [`docs/VIVA_PRESENTATION_GUIDE.md`](docs/VIVA_PRESENTATION_GUIDE.md)
-* **Designed Presentation PDF (12 Pages):** [`docs/PawLink_Viva_Presentation_Handbook.pdf`](docs/PawLink_Viva_Presentation_Handbook.pdf)
-* **Comprehensive Project Work Report:** [`docs/WORK_DONE_REPORT.md`](docs/WORK_DONE_REPORT.md)
-* **QA & Test Matrix (17 Cases):** [`docs/test-cases.md`](docs/test-cases.md)
+In direct accordance with the University Object-Oriented Programming (OOP) in Java & Database Systems project specification, PawLink delivers:
+
+1. **Design Document (Deliverable 1):** [`docs/DESIGN_DOCUMENT.md`](docs/DESIGN_DOCUMENT.md) — Class designs, dynamic polymorphism (`Payment`, `Pet`), design patterns, UML class diagrams, sequence diagrams, and PostgreSQL relational ERD.
+2. **Well-Documented Source Code (Deliverable 2):** [`backend/`](backend/) (101 source files) & [`swing-client/`](swing-client/) (56 source files) — Pure JDBC architecture with zero ORM overhead, FlatLaf modern UI, and Java 25 LTS compatibility.
+3. **User Manual & Setup Guide (Deliverable 3):** [`docs/USER_MANUAL.md`](docs/USER_MANUAL.md) — Step-by-step operating instructions, 1-click launchers, and complete workflow guides for all 4 platform roles.
+4. **Test Cases & QA Suite (Deliverable 4):** [`docs/test-cases.md`](docs/test-cases.md) — 20 documented test scenarios and **75 automated unit and integration tests** passing with 0 failures.
+5. **Presentation Slide Deck:** [`docs/PawLink_Mini_Project_Presentation.pdf`](docs/PawLink_Mini_Project_Presentation.pdf) — Slide presentation deck for evaluation.
+6. **Comprehensive Work-Done Report:** [`docs/WORK_DONE_REPORT.md`](docs/WORK_DONE_REPORT.md) — Detailed mapping of contributions across all 8 team verticals.
 
 ---
 
@@ -255,13 +259,13 @@ The application login window provides quick credentials for testing all 4 roles:
 PawLink contains comprehensive automated unit and integration tests covering business logic, data access, role restrictions, and REST controller endpoints:
 
 ```powershell
-# Run full backend automated test suite (73 tests)
+# Run full backend automated test suite (75 tests)
 mvn test -f backend/pom.xml
 
 # Compile and package entire multi-module reactor
 mvn clean package -DskipTests
 ```
-* **Backend:** 73 passing tests covering `AdminController`, `AdminService`, `AuthController`, `UserService`, `AppointmentService`, `SittingBookingService`, `ReminderScheduler`, and `PaymentDAO`.
+* **Backend:** 75 passing tests covering `AdminController`, `AdminService`, `AuthController`, `UserService`, `AppointmentService`, `SittingBookingService`, `ReminderScheduler`, and `PaymentDAO`.
 * **Swing Client:** Shaded standalone distribution verified on JDK 25 LTS.
 
 ---
